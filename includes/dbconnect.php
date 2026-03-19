@@ -2,7 +2,8 @@
 $host = 'localhost';
 $username = 'root';
 $password = '';
-$database = 'online_grocery_store';
+$database = 'online_grocery';
+
 // Create a connection to the database
 $conn = new mysqli($host, $username, $password, $database);
 // Check the connection
