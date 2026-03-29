@@ -1,34 +1,38 @@
 <?php
 include '../includes/dbconnect.php';
-// Start the session to access session variables
 session_start();
-// Payment processing logic for the customer
-// This is a placeholder for the actual payment processing code
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Retrieve payment details from the form submission
-    $paymentMethod = $_POST['payment_method'];
-    $amount = $_POST['amount'];
-    
-    // Validate payment details (this is a simplified example)
-    if (empty($paymentMethod) || empty($amount)) {
-        echo "Please provide all required payment details.";
-        exit;
-    }
-    
-    // Process the payment (this is a placeholder for actual payment gateway integration)
-    // In a real application, you would integrate with a payment gateway like Stripe, PayPal, etc.
-    
-    // Simulate successful payment processing
-    $paymentSuccess = true; // This should be the result of the actual payment processing
-    
-    if ($paymentSuccess) {
-        echo "Payment processed successfully!";
-        // You can also redirect the user to a success page or update the order status in the database
-    } else {
-        echo "Payment failed. Please try again.";
-        // Handle payment failure (e.g., show an error message, log the error, etc.)
-    }
-} else {
-    echo "Invalid request method.";
-}
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Infinity Grocer</title>
+    <link rel="stylesheet" href="includes/styles.css">
+</head>
+<body>
+    <div class="payment-container">
+    <h2>Credit Card Payment</h2>
+    <p>Enter your credit card details to complete your purchase.</p>
+    <form action="process_payment.php" method="POST" class="payment-form">
+        <div class="form-group">
+            <label for="name_on_card">Name on Card: </label>
+            <input type="text" id="name_on_card" name="name_on_card" required>
+        </div>
+        <div class="form-group">
+            <label for="card_number">Card Number: </label>
+            <input type="text" id="card_number" name="card_number" required>
+        </div>
+        <div class="form-group">
+            <label for="expiry_date">Expiry Date (MM/YY): </label>
+            <input type="text" id="expiry_date" name="expiry_date" required>
+        </div>
+        <div class="form-group">
+            <label for="cvv">CVV:  </label>
+            <input type="text" id="cvv" name="cvv" required>
+        </div>
+        <button type="submit" class="pay-btn">Pay Now</button>
+    </form>
+    </div>
+</body>
+</html>
