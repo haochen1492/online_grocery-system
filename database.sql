@@ -23,7 +23,8 @@ CREATE TABLE products (
     price DECIMAL(10, 2) NOT NULL,
     stock_quantity int NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(category_id)
+    FOREIGN KEY (category_id) REFERENCES categories(category_id),
+    product_image VARCHAR(255)
 );
 
 CREATE TABLE customers (
