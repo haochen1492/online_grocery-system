@@ -23,3 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+<?php if (isset($error)): ?>
+    <div class="error-msg" style="color: red; margin-bottom: 10px;">
+        <?php echo $error; ?>
+        <?php if ($error == "Please verify your email first!"): ?>
+            <br><a href="resend_verification.php">Resend verification link?</a>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
