@@ -4,23 +4,26 @@ include '../includes/dbconnect.php';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $v_code = bin2hex(random_bytes(16)); // Generate verification code
+    $password = $_POST['password'];
 
-    // Check if email exists
+    // --- DOUBLE CHECK EMAIL FORMAT HERE ---
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo "<script>alert('Invalid email format! Please provide a real email.'); window.history.back();</script>";
+        exit(); // Stop the script from running further
+    }
+    // ---------------------------------------
+
+    $password_hashed = password_hash($password, PASSWORD_DEFAULT);
+    $v_code = bin2hex(random_bytes(16));
+
+    // Check if email exists...
     $check = $conn->prepare("SELECT * FROM customers WHERE customer_email = ?");
     $check->execute([$email]);
     
     if ($check->rowCount() > 0) {
-        $error = "Email already registered!";
+        echo "<script>alert('Email already registered!'); window.history.back();</script>";
     } else {
-        $sql = "INSERT INTO customers (customer_name, customer_email, customer_password, verification_code) VALUES (?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        if ($stmt->execute([$name, $email, $password, $v_code])) {
-            // In a real server, use mail() or PHPMailer here:
-            // mail($email, "Verify Email", "Click here: verify.php?code=$v_code");
-            echo "<script>alert('Registration successful! Please check your email (simulated code: $v_code)'); window.location='login.php';</script>";
-        }
+        // Proceed with INSERT...
     }
 }
 ?>
