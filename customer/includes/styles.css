@@ -1,5 +1,5 @@
 header {
-    background-color: #329b18;
+    background-color: #f8f8f8;
     color: #000000;
     padding: 20px;
     text-align: center;
@@ -7,6 +7,7 @@ header {
     border-radius: 10px;
     box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
 }
+
 header p{
     font-size: 24px;
     margin: 10px 0;
@@ -34,6 +35,98 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 10px;
+    margin: auto;
+    max-width: 800px;
+    background-color: #ece8e8;
+    border-radius: 10px;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.cart-container h1 {
+    margin-bottom: 20px;
+}
+
+.checkout-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: 20px;
     margin: auto;
+    max-width: 1000px;
+    max-height: fit-content;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.checkout-container h1{
+    margin-bottom: 20px;
+}
+
+.checkout-container label {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.checkout-container input[type="text"],
+.checkout-container select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.checkout-container button {
+    padding: 10px 20px;
+    background-color: #48327a;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+}
+.checkout-container button:hover {
+    background-color: #000000;
+    transition: 0.3s;
+}
+
+.payment-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: auto;
+    max-width: 1000px;
+    max-height: fit-content;
+    background-color: #ffffff;
+    text-align: left;
+    border-radius: 10px;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.order-history-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: auto;
+    max-width: 1000px;
+    max-height: fit-content;
+    background-color: #ffffff;
+    text-align: left;
+    border-radius: 10px;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+}
+.address-form {
+    display: none;
+    border-color: #000000;
+    border-width: 2px;
+    border-style: solid;
+    padding: 20px;
+    margin: auto;
+    max-width: 1000px;
+    max-height: fit-content;
+    background-color: #ffffff;
+    text-align: left;
+    border-radius: 10px;
 }
