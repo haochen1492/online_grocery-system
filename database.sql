@@ -39,6 +39,7 @@ CREATE TABLE customers (
 CREATE TABLE addresses (
     address_id INT PRIMARY KEY AUTO_INCREMENT,
     customer_id int NOT NULL,
+    unit_no VARCHAR(255) NOT NULL,
     street VARCHAR(255) NOT NULL,
     city VARCHAR(255) NOT NULL,
     state VARCHAR(255) NOT NULL,
