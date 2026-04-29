@@ -1,7 +1,41 @@
 <?php
 session_start();
-?>
+require '../includes/dbconnect.php';
 
+/*Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}*/
+
+//handle address form submission
+if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $unit_no = $_POST['unit_no'] ?? '';
+    $street = $_POST['street'] ?? '';
+    $city = $_POST['city'] ?? '';
+    $state = $_POST['state'] ?? '';
+    $zip = $_POST['zip'] ?? '';
+
+    if (!empty($unit_no) && !empty($street) && !empty($city) && !empty($state) && !empty($zip)) {
+        $newAddress = [
+            'street' => $street,
+            'city' => $city,
+            'state' => $state,
+            'zip' => $zip
+        ];
+
+        if (!isset($_SESSION['addresses'])) {
+            $_SESSION['addresses'] = [];
+        }
+        $_SESSION['addresses'][] = $newAddress;
+
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'All fields are required.']);
+    }
+    exit;
+}
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -27,10 +61,11 @@ session_start();
                 echo '<ul>';
                 foreach ($_SESSION['addresses'] as $index => $address) {
                     echo '<li>';
+                    echo 'unit_no: ' . htmlspecialchars($address['unit_no']) . ', ';
                     echo 'Street: ' . htmlspecialchars($address['street']) . ', ';
                     echo 'City: ' . htmlspecialchars($address['city']) . ', ';
                     echo 'State: ' . htmlspecialchars($address['state']) . ', ';
-                    echo 'ZIP: ' . htmlspecialchars($address['zip']);
+                    echo 'Postal Code: ' . htmlspecialchars($address['postal_code']);
                     echo '</li>';
                 }
                 echo '</ul>';
@@ -41,15 +76,17 @@ session_start();
         <button type="button" onclick="showAddressForm()">Add New Address</button><br><br>
             <div class="address-form" id="address-form">
                 <h2>Enter Shipping Address</h2>
-                <form id="addressForm">
-                    <label for="street">Street Address:</label><br>
+                <form id="addressForm" method="POST">
+                    <label for="unit_no">Unit No./Block/Building</label><br>
+                    <input type="text" id="unit_no" name="unit_no" required><br>
+                    <label for="street">Street:</label><br>
                     <input type="text" id="street" name="street" required><br>
                     <label for="city">City:</label><br>
                     <input type="text" id="city" name="city" required><br>
                     <label for="state">State:</label><br>
                     <input type="text" id="state" name="state" required><br>
-                    <label for="zip">ZIP Code:</label><br>
-                    <input type="text" id="zip" name="zip" required><br><br>
+                    <label for="postal_code">Postal Code:</label><br>
+                    <input type="text" id="postal_code" name="postal_code" required><br><br>
                     <button type="submit">Save Address</button>
                 </form>
             </div>
@@ -74,6 +111,7 @@ session_start();
 
     document.getElementById('addressForm').addEventListener('submit', function(event) {
         event.preventDefault();
+        const unit_no = document.getElementById('unit_no').value;
         const street = document.getElementById('street').value;
         const city = document.getElementById('city').value;
         const state = document.getElementById('state').value;
@@ -84,7 +122,7 @@ session_start();
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ street, city, state, zip })
+            body: JSON.stringify({ unit_no, street, city, state, zip })
         })
         .then(response => response.json())
         .then(data => {

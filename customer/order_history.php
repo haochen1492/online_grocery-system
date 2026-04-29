@@ -2,6 +2,21 @@
 include '../includes/dbconnect.php';
 session_start();
 
+/*check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}*/
+
+// Fetch user orders
+if (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+    // Fetch orders for the logged-in user
+    $stmt = $pdo->prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC');
+    $stmt->execute([$userId]);
+    $orders = $stmt->fetchAll();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,7 +32,7 @@ session_start();
 <body>
 <div class="order-history-container">
     <h2>Your Order History</h2>
-    
+    <?php if (!empty($orders)): ?>
         <table class="order-history-table">
             <thead>
                 <tr>
@@ -28,15 +43,19 @@ session_start();
                 </tr>
             </thead>
             <tbody>
+                <?php foreach ($orders as $order): ?>
                     <tr>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+                        <td><?php echo htmlspecialchars($order['id']); ?></td>
+                        <td><?php echo htmlspecialchars($order['created_at']); ?></td>
+                        <td>RM<?php echo number_format($order['total_amount'], 2); ?></td>
+                        <td><?php echo htmlspecialchars($order['status']); ?></td>
                     </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
+    <?php else: ?>
         <p>You have no orders yet. <a href="index.php">Start shopping!</a></p>
+    <?php endif; ?>
 </div>
 </body>
 </html>

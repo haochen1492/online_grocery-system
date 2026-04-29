@@ -4,6 +4,20 @@ include '../includes/dbconnect.php';
 
 session_start();
 
+//fetch added products
+$products = [];
+if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
+    $ids = array_keys($_SESSION['cart']);
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $conn->prepare("SELECT * FROM products WHERE id IN ($placeholders)");
+    $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $products[$row['id']] = $row;
+    }
+}
+
 // Handle adding to cart
 if (isset($_POST['product_id'])) {
     $id = $_POST['product_id'];
@@ -45,7 +59,7 @@ $total = 0;
             <div class="cart-item">
                 <div class="item-details">
                     <h4><?php echo $item['name']; ?></h4>
-                    <small>Quantity: <?php echo $quantity; ?> x $<?php echo number_format($item['price'], 2); ?></small>
+                    <small>Quantity: <?php echo $quantity; ?> x RM<?php echo number_format($item['price'], 2); ?></small>
                 </div>
                 <div>
                     <strong>$<?php echo number_format($subtotal, 2); ?></strong>
@@ -56,7 +70,7 @@ $total = 0;
         <?php endforeach; ?>
 
         <div class="cart-summary">
-            <h3>Total: $<?php echo number_format($total, 2); ?></h3>
+            <h3>Total: RM<?php echo number_format($total, 2); ?></h3>
             <form action="create-payment-intent.php" method="POST">
                 <input type="hidden" name="total_amount" value="<?php echo $total * 100; ?>">
                 <button type="submit" class="checkout-btn">Proceed to Payment</button>
