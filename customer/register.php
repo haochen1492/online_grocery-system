@@ -7,27 +7,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Double check email format
+    // 1. Double check email format
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Invalid email format! Please provide a real email.";
+        $error = "Invalid email format!";
     } else {
         $password_hashed = password_hash($password, PASSWORD_DEFAULT);
         $v_code = bin2hex(random_bytes(16));
 
-        // Check if email exists in customers table[cite: 1]
-        $check = $conn->prepare("SELECT * FROM customers WHERE customer_email = ?");
-        $check->execute([$email]);
-        
-        if ($check->rowCount() > 0) {
+        // 2. Check if email exists using MySQLi syntax
+        $check = $conn->prepare("SELECT customer_id FROM customers WHERE customer_email = ?");
+        $check->bind_param("s", $email); // "s" means the parameter is a string
+        $check->execute();
+        $check->store_result(); // Required to use num_rows
+
+        // FIX: Use num_rows instead of rowCount()
+        if ($check->num_rows > 0) {
             $error = "Email already registered!";
         } else {
-            $sql = "INSERT INTO customers (customer_name, customer_email, customer_password, verification_code) VALUES (?, ?, ?, ?)";
-            $stmt = $conn->prepare($sql);
-            if ($stmt->execute([$name, $email, $password_hashed, $v_code])) {
-                echo "<script>alert('Registration successful! Please check your email. (Simulated Code: $v_code)'); window.location='login.php';</script>";
+            // 3. Insert new customer into customers table
+            $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_email, customer_password, verification_code) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("ssss", $name, $email, $password_hashed, $v_code);
+            
+            if ($stmt->execute()) {
+                // 4. Send verification email
+                $to = $email;
+                $subject = "Verify your Infinity Grocer account";
+                $message = "Hi $name,\n\nPlease click the link below to verify your account:\n\nhttp://localhost/online_grocery-system/customer/verify.php?code=$v_code\n\nThank you!";
+                $headers = "From: noreply@infinitygrocer.com";
+                header("Location: login.php?registration=success");
                 exit();
-            }
+                }
         }
+        $check->close();
     }
 }
 ?>
@@ -51,18 +62,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="error-msg"><?php echo $error; ?></div>
     <?php endif; ?>
 
-    <form method="POST">
-        <label for="name">Full Name:</label>
-        <input type="text" name="name" required placeholder="Enter your full name">
+    <!-- Inside your register.php auth-container -->
+<form method="POST">
+    <label for="name">Full Name:</label>
+    <input type="text" name="name" required placeholder="Enter your full name">
 
-        <label for="email">Email Address:</label>
-        <input type="email" name="email" required placeholder="Enter your email">
+    <label for="email">Email Address:</label>
+    <input type="email" name="email" required placeholder="Enter your email">
 
-        <label for="password">Password:</label>
-        <input type="password" name="password" required minlength="6" placeholder="At least 6 characters">
+    <label for="password">Password:</label>
+    <!-- Added id="regPassword" -->
+    <input type="password" name="password" id="regPassword" required minlength="6" placeholder="At least 6 characters">
+    
+    <!-- Added Show Password Toggle -->
+    <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="showPassToggle" onclick="togglePassword()">
+        <label for="showPassToggle" style="margin-top: 0; font-weight: normal; cursor: pointer;">Show Password</label>
+    </div>
 
-        <button type="submit" class="btn">Register</button>
-    </form>
+    <button type="submit" class="btn">Register</button>
+</form>
+
+<!-- Add this JavaScript right before the closing </body> tag -->
+<script>
+function togglePassword() {
+    var x = document.getElementById("regPassword");
+    if (x.type === "password") {
+        x.type = "text";
+    } else {
+        x.type = "password";
+    }
+}
+</script>
     
     <p style="margin-top: 15px;">
         Already have an account? <a href="login.php">Login here</a>

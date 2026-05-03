@@ -311,3 +311,9 @@ th {
     margin-bottom: 15px;
     border: 1px solid #c3e6cb;
 }
+
+input[type="checkbox"] {
+    width: auto;
+    margin-top: 0;
+    cursor: pointer;
+}
