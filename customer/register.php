@@ -1,4 +1,14 @@
 <?php
+// These "use" statements must be at the very top of the file
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+
+// Adjust the paths based on where you put the files
+require 'vendor/phpmailer/Exception.php';
+require 'vendor/phpmailer/PHPMailer.php';
+require 'vendor/phpmailer/SMTP.php';
+
 include '../includes/dbconnect.php';
 session_start();
 
@@ -16,27 +26,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // 2. Check if email exists using MySQLi syntax
         $check = $conn->prepare("SELECT customer_id FROM customers WHERE customer_email = ?");
-        $check->bind_param("s", $email); // "s" means the parameter is a string
+        $check->bind_param("s", $email);
         $check->execute();
-        $check->store_result(); // Required to use num_rows
+        $check->store_result();
 
-        // FIX: Use num_rows instead of rowCount()
         if ($check->num_rows > 0) {
             $error = "Email already registered!";
         } else {
-            // 3. Insert new customer into customers table
+            // 3. Insert new customer into customers table[cite: 1]
             $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_email, customer_password, verification_code) VALUES (?, ?, ?, ?)");
             $stmt->bind_param("ssss", $name, $email, $password_hashed, $v_code);
             
             if ($stmt->execute()) {
-                // 4. Send verification email
-                $to = $email;
-                $subject = "Verify your Infinity Grocer account";
-                $message = "Hi $name,\n\nPlease click the link below to verify your account:\n\nhttp://localhost/online_grocery-system/customer/verify.php?code=$v_code\n\nThank you!";
-                $headers = "From: noreply@infinitygrocer.com";
-                header("Location: login.php?registration=success");
-                exit();
+                // 4. Send verification email using PHPMailer
+                $mail = new PHPMailer(true);
+
+                try {
+                    // Server settings
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'YOUR_GMAIL@gmail.com'; // Your Gmail address
+                    $mail->Password   = 'YOUR_APP_PASSWORD';    // Your 16-character App Password
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = 587;
+
+                    // Recipients
+                    $mail->setFrom('YOUR_GMAIL@gmail.com', 'Infinity Grocer');
+                    $mail->addAddress($email, $name); 
+
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Verify your Infinity Grocer account';
+                    
+                    // Create the verification link
+                    $verification_link = "http://localhost/online_grocery-system/customer/verify.php?code=$v_code";
+                    
+                    $mail->Body = "
+                        <h2>Welcome to Infinity Grocer, $name!</h2>
+                        <p>Please click the button below to verify your email address and activate your account.</p>
+                        <a href='$verification_link' style='background:#329b18; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>Verify Email</a>
+                        <p>If the button doesn't work, copy and paste this link: <br> $verification_link</p>
+                    ";
+
+                    $mail->send();
+                    
+                    // Redirect to login page with success message
+                    header("Location: login.php?registration=success");
+                    exit();
+                } catch (Exception $e) {
+                    $error = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
                 }
+            }
         }
         $check->close();
     }
@@ -59,31 +100,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <h2>Create an Account</h2>
 
     <?php if (isset($error)): ?>
-        <div class="error-msg"><?php echo $error; ?></div>
+        <div class="error-msg"><?php echo $error; ?></div> <!--[cite: 7] -->
     <?php endif; ?>
 
-    <!-- Inside your register.php auth-container -->
-<form method="POST">
-    <label for="name">Full Name:</label>
-    <input type="text" name="name" required placeholder="Enter your full name">
+    <form method="POST">
+        <label for="name">Full Name:</label>
+        <input type="text" name="name" required placeholder="Enter your full name">
 
-    <label for="email">Email Address:</label>
-    <input type="email" name="email" required placeholder="Enter your email">
+        <label for="email">Email Address:</label>
+        <input type="email" name="email" required placeholder="Enter your email">
 
-    <label for="password">Password:</label>
-    <!-- Added id="regPassword" -->
-    <input type="password" name="password" id="regPassword" required minlength="6" placeholder="At least 6 characters">
+        <label for="password">Password:</label>
+        <input type="password" name="password" id="regPassword" required minlength="6" placeholder="At least 6 characters">
+        
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="showPassToggle" onclick="togglePassword()">
+            <label for="showPassToggle" style="margin-top: 0; font-weight: normal; cursor: pointer;">Show Password</label>
+        </div>
+
+        <button type="submit" class="btn">Register</button>
+    </form>
     
-    <!-- Added Show Password Toggle -->
-    <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-        <input type="checkbox" id="showPassToggle" onclick="togglePassword()">
-        <label for="showPassToggle" style="margin-top: 0; font-weight: normal; cursor: pointer;">Show Password</label>
-    </div>
+    <p style="margin-top: 15px;">
+        Already have an account? <a href="login.php">Login here</a>
+    </p>
+</div>
 
-    <button type="submit" class="btn">Register</button>
-</form>
-
-<!-- Add this JavaScript right before the closing </body> tag -->
 <script>
 function togglePassword() {
     var x = document.getElementById("regPassword");
@@ -94,11 +136,6 @@ function togglePassword() {
     }
 }
 </script>
-    
-    <p style="margin-top: 15px;">
-        Already have an account? <a href="login.php">Login here</a>
-    </p>
-</div>
 
 </body>
 </html>
