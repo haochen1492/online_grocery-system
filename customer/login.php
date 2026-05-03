@@ -21,27 +21,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <!-- LINKING HEADER FILE HERE -->
 <?php include 'includes/header.php'; ?> <!--[cite: 6] -->
 
-<div class="auth-container">
-    <h2>Customer Login</h2>
+<div class="auth-container"> <!-- Uses the class we defined in styles.css -->
+    <h2>Login your account</h2>
 
-    <!-- CHECK FOR REGISTRATION SUCCESS MSG -->
-    <?php if (isset($_GET['registration']) && $_GET['registration'] == 'success'): ?>
-        <div class="success-msg">
-            Registration successful! Please check your email to verify your account before logging in.
-        </div>
-    <?php endif; ?>
-
-    <!-- Your existing error message block -->
     <?php if (isset($error)): ?>
-        <div class="error-msg">
+        <div class="error-msg"> <!-- Style handled by styles.css -->
             <?php echo $error; ?>
+            <?php if ($error == "Please verify your email first!"): ?>
+                <br><a href="resend_verification.php">Resend verification link?</a>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
     <form method="POST" action="login.php">
-        <!-- ... email and password inputs ... -->
+        <label for="email">Email Address:</label>
+        <input type="email" name="email" id="email" required placeholder="Enter your email">
+
+        <label for="password">Password:</label>
+        <input type="password" name="password" id="password" required placeholder="Enter your password">
+
         <button type="submit" class="btn">Login</button>
     </form>
+    
+    <p style="margin-top: 15px;">
+        Don't have an account? <a href="register.php">Register here</a>
+    </p>
+    <p>
+        <a href="forgot_password.php">Forgot Password?</a>
+    </p>
+
+    
 </div>
 
 </body>
