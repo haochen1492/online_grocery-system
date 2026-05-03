@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <?php include 'includes/header.php'; ?> <!--[cite: 6] -->
 
 <div class="auth-container"> <!-- Uses the class we defined in styles.css -->
-    <h2>Customer Login</h2>
+    <h2>Login your account</h2>
 
     <?php if (isset($error)): ?>
         <div class="error-msg"> <!-- Style handled by styles.css -->

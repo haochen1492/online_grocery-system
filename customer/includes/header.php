@@ -4,7 +4,7 @@
     <a href="products.php">Products</a>
     <a href="Contact.php">Contact</a>
     <a href="about.php">About Us</a>
-    <a href="cart.php">Cart</a> <!-- Changed to .php to match your cart file[cite: 2] -->
+    <a href="cart.php">Cart</a> 
 
     <?php if (isset($_SESSION['user_id'])): ?>
         <span>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
