@@ -4,6 +4,12 @@ include '../includes/dbconnect.php';
 
 session_start();
 
+// Check if user is logged in
+/*if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}*/
+
 //fetch added products
 $products = [];
 if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
@@ -71,7 +77,7 @@ $total = 0;
 
         <div class="cart-summary">
             <h3>Total: RM<?php echo number_format($total, 2); ?></h3>
-            <form action="create-payment-intent.php" method="POST">
+            <form action="checkout.php" method="POST">
                 <input type="hidden" name="total_amount" value="<?php echo $total * 100; ?>">
                 <button type="submit" class="checkout-btn">Proceed to Payment</button>
             </form>
