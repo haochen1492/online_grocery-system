@@ -3,31 +3,53 @@ include '../includes/dbconnect.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-
-    $stmt = $conn->prepare("SELECT * FROM customers WHERE customer_email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
-
-    if ($user && password_verify($password, $user['customer_password'])) {
-        if ($user['is_verified'] == 0) {
-            $error = "Please verify your email first!";
-        } else {
-            $_SESSION['user_id'] = $user['customer_id'];
-            $_SESSION['username'] = $user['customer_name'];
-            header("Location: index.php");
-        }
-    } else {
-        $error = "Invalid credentials!";
-    }
+    // ... your existing PHP logic for authentication ...
 }
 ?>
-<?php if (isset($error)): ?>
-    <div class="error-msg" style="color: red; margin-bottom: 10px;">
-        <?php echo $error; ?>
-        <?php if ($error == "Please verify your email first!"): ?>
-            <br><a href="resend_verification.php">Resend verification link?</a>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Online Grocery System</title>
+    <!-- LINKING CSS FILE HERE -->
+    <link rel="stylesheet" href="includes/styles.css"> <!--[cite: 7] -->
+</head>
+<body>
+
+<!-- LINKING HEADER FILE HERE -->
+<?php include 'includes/header.php'; ?> <!--[cite: 6] -->
+
+<div class="auth-container"> <!-- Uses the class we defined in styles.css -->
+    <h2>Customer Login</h2>
+
+    <?php if (isset($error)): ?>
+        <div class="error-msg"> <!-- Style handled by styles.css -->
+            <?php echo $error; ?>
+            <?php if ($error == "Please verify your email first!"): ?>
+                <br><a href="resend_verification.php">Resend verification link?</a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <form method="POST" action="login.php">
+        <label for="email">Email Address:</label>
+        <input type="email" name="email" id="email" required placeholder="Enter your email">
+
+        <label for="password">Password:</label>
+        <input type="password" name="password" id="password" required placeholder="Enter your password">
+
+        <button type="submit" class="btn">Login</button>
+    </form>
+    
+    <p style="margin-top: 15px;">
+        Don't have an account? <a href="register.php">Register here</a>
+    </p>
+    <p>
+        <a href="forgot_password.php">Forgot Password?</a>
+    </p>
+</div>
+
+</body>
+</html>

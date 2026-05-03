@@ -143,3 +143,171 @@ body {
     text-align: left;
     border-radius: 10px;
 }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+/* --- Header & Navigation --- */
+header {
+    background-color: #329b18; /* Your primary green */
+    color: #ffffff;
+    padding: 15px 0;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+header p {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+nav {
+    background: #fff;
+    padding: 10px;
+    text-align: center;
+    border-bottom: 2px solid #329b18;
+}
+
+nav a {
+    color: #48327a; /* Your primary purple */
+    margin: 0 15px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+nav a:hover {
+    color: #329b18;
+    text-decoration: underline;
+}
+
+/* --- Container Layouts --- */
+.container, .cart-container, .profile-wrapper, .auth-container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+/* --- Forms & Inputs --- */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-top: 15px;
+    font-weight: bold;
+    color: #48327a;
+}
+
+input[type="text"], 
+input[type="email"], 
+input[type="password"], 
+select, 
+textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box; /* Ensures padding doesn't affect width */
+}
+
+input:focus {
+    outline: none;
+    border-color: #329b18;
+    box-shadow: 0 0 5px rgba(50, 155, 24, 0.2);
+}
+
+/* --- Buttons --- */
+button, .btn {
+    background-color: #329b18;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background-color: #287a13;
+}
+
+.btn-secondary {
+    background-color: #48327a;
+}
+
+.btn-secondary:hover {
+    background-color: #36255c;
+}
+
+/* --- Cart & Tables[cite: 2, 4] --- */
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
+}
+
+.remove-btn {
+    color: #e74c3c;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    text-align: left;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #f8f9fa;
+    color: #48327a;
+}
+
+/* --- Status Badges[cite: 1] --- */
+.status-pending { color: #f39c12; font-weight: bold; }
+.status-shipped { color: #3498db; font-weight: bold; }
+.status-delivered { color: #329b18; font-weight: bold; }
+
+/* --- Alerts & Messages --- */
+.error-msg {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #f5c6cb;
+}
+
+.success-msg {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #c3e6cb;
+}
