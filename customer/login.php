@@ -33,6 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     <?php endif; ?>
 
+    <?php if (isset($_GET['registration']) && $_GET['registration'] == 'success'): ?>
+        <div class="success-msg" style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center;">
+            Registration successful! You can now log in.
+        </div>
+    <?php endif; ?>
+
     <form method="POST" action="login.php">
         <label for="email">Email Address:</label>
         <input type="email" name="email" id="email" required placeholder="Enter your email">
