@@ -14,14 +14,14 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     $street = $_POST['street'] ?? '';
     $city = $_POST['city'] ?? '';
     $state = $_POST['state'] ?? '';
-    $zip = $_POST['zip'] ?? '';
+    $postal_code = $_POST['postal_code'] ?? '';
 
-    if (!empty($unit_no) && !empty($street) && !empty($city) && !empty($state) && !empty($zip)) {
+    if (!empty($unit_no) && !empty($street) && !empty($city) && !empty($state) && !empty($postal_code)) {
         $newAddress = [
             'street' => $street,
             'city' => $city,
             'state' => $state,
-            'zip' => $zip
+            'postal_code' => $postal_code
         ];
 
         if (!isset($_SESSION['addresses'])) {
@@ -87,7 +87,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" id="state" name="state" required><br>
                     <label for="postal_code">Postal Code:</label><br>
                     <input type="text" id="postal_code" name="postal_code" required><br><br>
-                    <button type="submit">Save Address</button>
+                    <button type="submit" onclick="saveAddress()">Save Address</button>
                 </form>
             </div>
         <label for="payment_method">Payment Method:</label><br>
@@ -109,33 +109,34 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.getElementById('address-form').style.display = 'block';
     }
 
-    document.getElementById('addressForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const unit_no = document.getElementById('unit_no').value;
-        const street = document.getElementById('street').value;
-        const city = document.getElementById('city').value;
-        const state = document.getElementById('state').value;
-        const zip = document.getElementById('zip').value;
+        document.getElementById('addressForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const unit_no = document.getElementById('unit_no').value;
+            const street = document.getElementById('street').value;
+            const city = document.getElementById('city').value;
+            const state = document.getElementById('state').value;
+            const zip = document.getElementById('postal_code').value;
 
-        fetch('save_address.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ unit_no, street, city, state, zip })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Address saved successfully!');
-                location.reload();
-            } else {
-                alert('Failed to save address. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while saving the address. Please try again.');
+            fetch('save_address.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ unit_no, street, city, state, zip })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Address saved successfully!');
+                    location.reload();
+                } else {
+                    alert('Failed to save address. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the address. Please try again.');
+            });
         });
-    });
+
 </script>
