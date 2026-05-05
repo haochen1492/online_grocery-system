@@ -3,7 +3,28 @@ include '../includes/dbconnect.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // ... your existing PHP logic for authentication ...
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    // Search for the user in the database[cite: 3, 4]
+    $stmt = $conn->prepare("SELECT customer_id, customer_password FROM customers WHERE customer_email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+        // Verify the hashed password[cite: 4, 5]
+        if (password_verify($password, $user['customer_password'])) {
+            $_SESSION['customer_id'] = $user['customer_id'];
+            header("Location: index.php"); // Redirect to home on success
+            exit();
+        } else {
+            $error = "Invalid email address or password.";
+        }
+    } else {
+        $error = "Invalid email address or password.";
+    }
 }
 ?>
 
@@ -13,26 +34,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Online Grocery System</title>
-    <!-- LINKING CSS FILE HERE -->
-    <link rel="stylesheet" href="includes/styles.css"> <!--[cite: 7] -->
+    <link rel="stylesheet" href="includes/styles.css"> 
 </head>
 <body>
 
-<!-- LINKING HEADER FILE HERE -->
-<?php include 'includes/header.php'; ?> <!--[cite: 6] -->
+<?php include 'includes/header.php'; ?>
 
-<div class="auth-container"> <!-- Uses the class we defined in styles.css -->
-    <h2>Login your account</h2>
+<div class="auth-container">
+    <h2>Login to your account</h2>
 
+    <!-- Displays error for wrong password or unregistered email[cite: 4] -->
     <?php if (isset($error)): ?>
-        <div class="error-msg"> <!-- Style handled by styles.css -->
+        <div class="error-msg" style="color: red; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center;">
             <?php echo $error; ?>
-            <?php if ($error == "Please verify your email first!"): ?>
-                <br><a href="resend_verification.php">Resend verification link?</a>
-            <?php endif; ?>
         </div>
     <?php endif; ?>
 
+    <!-- Registration success message[cite: 4] -->
     <?php if (isset($_GET['registration']) && $_GET['registration'] == 'success'): ?>
         <div class="success-msg" style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center;">
             Registration successful! You can now log in.
@@ -41,10 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <form method="POST" action="login.php">
         <label for="email">Email Address:</label>
-        <input type="email" name="email" id="email" required placeholder="Enter your email">
+        <input type="email" name="email" required placeholder="Enter your email">
 
         <label for="password">Password:</label>
-        <input type="password" name="password" id="password" required placeholder="Enter your password">
+        <input type="password" name="password" required placeholder="Enter your password">
 
         <button type="submit" class="btn">Login</button>
     </form>
@@ -52,11 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <p style="margin-top: 15px;">
         Don't have an account? <a href="register.php">Register here</a>
     </p>
-    <p>
-        <a href="forgot_password.php">Forgot Password?</a>
-    </p>
-
-    
 </div>
 
 </body>

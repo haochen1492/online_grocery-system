@@ -4,25 +4,33 @@ include '../includes/dbconnect.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Collect data from the form[cite: 4]
+    // Collect data from the form[cite: 6]
     $name = $_POST['name'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
     $password = $_POST['password'];
 
-    // 1. Server-side Validation[cite: 4]
+    // 1. Password Complexity Validation Logic
+    $uppercase = preg_match('@[A-Z]@', $password);
+    $lowercase = preg_match('@[a-z]@', $password);
+    $specialChars = preg_match('@[^\w]@', $password);
+
+    // 2. Server-side Validation[cite: 6]
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
     } 
-    // NEW: Check if phone contains only numbers[cite: 1]
     else if (!ctype_digit($phone)) {
         $error = "Phone number must contain only digits (0-9).";
     } 
+    // NEW: Strict Password Requirement Check
+    else if (!$uppercase || !$lowercase || !$specialChars || strlen($password) < 15) {
+        $error = "Password must be at least 15 characters long and include at least one uppercase letter, one lowercase letter, and one special character.";
+    }
     else {
-        // Hash the password for security[cite: 4]
+        // Hash the password for security[cite: 6]
         $password_hashed = password_hash($password, PASSWORD_DEFAULT);
 
-        // 2. Check if email already exists in the customers table
+        // 3. Check if email already exists in the customers table[cite: 6]
         $check = $conn->prepare("SELECT customer_id FROM customers WHERE customer_email = ?");
         $check->bind_param("s", $email);
         $check->execute();
@@ -31,12 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($check->num_rows > 0) {
             $error = "This email is already registered!";
         } else {
-            // 3. Insert data into the customers table following your schema[cite: 3]
+            // 4. Insert data into the customers table[cite: 3, 6]
             $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_email, customer_password, customer_phone) VALUES (?, ?, ?, ?)");
             $stmt->bind_param("ssss", $name, $email, $password_hashed, $phone);
             
             if ($stmt->execute()) {
-                // Redirect to login page upon success[cite: 4]
+                // Redirect to login page upon success[cite: 6]
                 header("Location: login.php?registration=success");
                 exit();
             } else {
@@ -63,9 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <div class="auth-container">
     <h2>Create Customer Account</h2>
 
-    <!-- Display error message if any[cite: 4] -->
+    <!-- Display error message if any[cite: 6] -->
     <?php if (isset($error)): ?>
-        <div class="error-msg" style="color: red; margin-bottom: 10px;"><?php echo $error; ?></div>
+        <div class="error-msg" style="color: red; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+            <?php echo $error; ?>
+        </div>
     <?php endif; ?>
 
     <form method="POST">
@@ -76,12 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="email" name="email" required placeholder="Enter your email">
 
         <label for="phone">Phone Number:</label>
-        <!-- Added id and oninput for real-time validation[cite: 4] -->
         <input type="text" name="phone" id="phoneInput" required placeholder="e.g. 0123456789" oninput="validatePhone()">
         <span id="phoneError" style="color: red; font-size: 0.8em; display: none; margin-top: 5px;">Only numbers are allowed!</span>
 
         <label for="password">Password:</label>
-        <input type="password" name="password" id="regPassword" required minlength="8" placeholder="At least 8 characters">
+        <!-- Updated minlength and placeholder for new security rules[cite: 5] -->
+        <input type="password" name="password" id="regPassword" required minlength="15" 
+               placeholder="Min 15 chars (A, a, # required)">
         
         <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="showPassToggle" onclick="togglePassword()">
@@ -97,12 +108,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 <script>
-// Logic to only allow numbers in the phone field[cite: 4]
+// Numeric only validation for phone field[cite: 6]
 function validatePhone() {
     var phoneInput = document.getElementById("phoneInput");
     var phoneError = document.getElementById("phoneError");
-    
-    // Replace non-numeric characters with empty string
     var cleanedValue = phoneInput.value.replace(/[^0-9]/g, '');
     
     if (phoneInput.value !== cleanedValue) {
@@ -113,14 +122,10 @@ function validatePhone() {
     }
 }
 
-// Toggle Password Visibility Logic[cite: 4]
+// Toggle Password Visibility Logic[cite: 6]
 function togglePassword() {
     var x = document.getElementById("regPassword");
-    if (x.type === "password") {
-        x.type = "text";
-    } else {
-        x.type = "password";
-    }
+    x.type = (x.type === "password") ? "text" : "password";
 }
 </script>
 
