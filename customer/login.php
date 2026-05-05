@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Search for the user in the database[cite: 3, 4]
+    // Search for the user in the database[cite: 3]
     $stmt = $conn->prepare("SELECT customer_id, customer_password FROM customers WHERE customer_email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -14,10 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
-        // Verify the hashed password[cite: 4, 5]
+        // Verify the hashed password[cite: 5]
         if (password_verify($password, $user['customer_password'])) {
             $_SESSION['customer_id'] = $user['customer_id'];
-            header("Location: index.php"); // Redirect to home on success
+            header("Location: index.php"); 
             exit();
         } else {
             $error = "Invalid email address or password.";
@@ -43,14 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <div class="auth-container">
     <h2>Login to your account</h2>
 
-    <!-- Displays error for wrong password or unregistered email[cite: 4] -->
+    <!-- Error Message Display[cite: 4] -->
     <?php if (isset($error)): ?>
         <div class="error-msg" style="color: red; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center;">
             <?php echo $error; ?>
         </div>
     <?php endif; ?>
 
-    <!-- Registration success message[cite: 4] -->
+    <!-- Registration Success Message[cite: 4] -->
     <?php if (isset($_GET['registration']) && $_GET['registration'] == 'success'): ?>
         <div class="success-msg" style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center;">
             Registration successful! You can now log in.
@@ -62,7 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="email" name="email" required placeholder="Enter your email">
 
         <label for="password">Password:</label>
-        <input type="password" name="password" required placeholder="Enter your password">
+        <!-- Added ID for the password field to be targeted by JS[cite: 6] -->
+        <input type="password" name="password" id="loginPassword" required placeholder="Enter your password">
+
+        <!-- NEW: Show Password Checkbox[cite: 6] -->
+        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="showPassToggle" onclick="togglePassword()">
+            <label for="showPassToggle" style="cursor: pointer; font-weight: normal; margin-top: 0;">Show Password</label>
+        </div>
 
         <button type="submit" class="btn">Login</button>
     </form>
@@ -71,6 +78,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         Don't have an account? <a href="register.php">Register here</a>
     </p>
 </div>
+
+<script>
+// Function to toggle password visibility[cite: 6]
+function togglePassword() {
+    var x = document.getElementById("loginPassword");
+    if (x.type === "password") {
+        x.type = "text";
+    } else {
+        x.type = "password";
+    }
+}
+</script>
 
 </body>
 </html>
