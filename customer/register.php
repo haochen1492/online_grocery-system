@@ -1,36 +1,36 @@
 <?php
-// Include your database connection
 include '../includes/dbconnect.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Collect data from the form[cite: 6]
     $name = $_POST['name'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
     $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password']; // New field[cite: 3]
 
-    // 1. Password Complexity Validation Logic
+    // Password Complexity Checks
     $uppercase = preg_match('@[A-Z]@', $password);
     $lowercase = preg_match('@[a-z]@', $password);
     $specialChars = preg_match('@[^\w]@', $password);
 
-    // 2. Server-side Validation[cite: 6]
+    // 1. Server-side Validation
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
     } 
     else if (!ctype_digit($phone)) {
-        $error = "Phone number must contain only digits (0-9).";
+        $error = "Phone number must contain only digits.";
     } 
-    // NEW: Strict Password Requirement Check
     else if (!$uppercase || !$lowercase || !$specialChars || strlen($password) < 15) {
-        $error = "Password must be at least 15 characters long and include at least one uppercase letter, one lowercase letter, and one special character.";
+        $error = "Password does not meet security requirements.";
+    }
+    else if ($password !== $confirm_password) { // Match Check
+        $error = "Passwords do not match!";
     }
     else {
-        // Hash the password for security[cite: 6]
         $password_hashed = password_hash($password, PASSWORD_DEFAULT);
 
-        // 3. Check if email already exists in the customers table[cite: 6]
+        // 2. Check if email exists[cite: 3, 6]
         $check = $conn->prepare("SELECT customer_id FROM customers WHERE customer_email = ?");
         $check->bind_param("s", $email);
         $check->execute();
@@ -39,16 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($check->num_rows > 0) {
             $error = "This email is already registered!";
         } else {
-            // 4. Insert data into the customers table[cite: 3, 6]
+            // 3. Insert into DB[cite: 3]
             $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_email, customer_password, customer_phone) VALUES (?, ?, ?, ?)");
             $stmt->bind_param("ssss", $name, $email, $password_hashed, $phone);
             
             if ($stmt->execute()) {
-                // Redirect to login page upon success[cite: 6]
                 header("Location: login.php?registration=success");
                 exit();
             } else {
-                $error = "Something went wrong. Please try again.";
+                $error = "Registration failed. Please try again.";
             }
         }
         $check->close();
@@ -63,6 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Infinity Grocer</title>
     <link rel="stylesheet" href="includes/styles.css">
+    <style>
+        .requirement { color: red; font-size: 0.85em; display: block; margin-top: 2px; }
+        .valid { color: green; }
+        .error-hint { color: red; font-size: 0.85em; display: none; }
+    </style>
 </head>
 <body>
 
@@ -71,61 +75,77 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <div class="auth-container">
     <h2>Create Customer Account</h2>
 
-    <!-- Display error message if any[cite: 6] -->
     <?php if (isset($error)): ?>
-        <div class="error-msg" style="color: red; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
-            <?php echo $error; ?>
-        </div>
+        <div class="error-msg" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 10px;"><?php echo $error; ?></div>
     <?php endif; ?>
 
     <form method="POST">
-        <label for="name">Full Name:</label>
-        <input type="text" name="name" required placeholder="Enter your full name">
+        <label>Full Name:</label>
+        <input type="text" name="name" required>
 
-        <label for="email">Email Address:</label>
-        <input type="email" name="email" required placeholder="Enter your email">
+        <label>Email Address:</label>
+        <input type="email" name="email" required>
 
-        <label for="phone">Phone Number:</label>
-        <input type="text" name="phone" id="phoneInput" required placeholder="e.g. 0123456789" oninput="validatePhone()">
-        <span id="phoneError" style="color: red; font-size: 0.8em; display: none; margin-top: 5px;">Only numbers are allowed!</span>
+        <label>Phone Number:</label>
+        <input type="text" name="phone" id="phoneInput" oninput="validatePhone()" required>
 
-        <label for="password">Password:</label>
-        <!-- Updated minlength and placeholder for new security rules[cite: 5] -->
-        <input type="password" name="password" id="regPassword" required minlength="15" 
-               placeholder="Min 15 chars (A, a, # required)">
+        <label>Password:</label>
+        <input type="password" name="password" id="regPassword" onkeyup="checkRequirements()" required>
+        <!-- Requirement Tips[cite: 5] -->
+        <div id="passwordTips" style="margin-bottom: 10px;">
+            <span id="len" class="requirement">• Minimum 15 characters</span>
+            <span id="upper" class="requirement">• 1 Uppercase letter</span>
+            <span id="lower" class="requirement">• 1 Lowercase letter</span>
+            <span id="special" class="requirement">• 1 Special character (@, #, $, etc.)</span>
+        </div>
+
+        <label>Confirm Password:</label>
+        <input type="password" name="confirm_password" id="confirmPassword" onkeyup="checkMatch()" required>
+        <span id="matchError" class="error-hint">Passwords must match!</span>
         
-        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="showPassToggle" onclick="togglePassword()">
-            <label for="showPassToggle" style="cursor: pointer; font-weight: normal;">Show Password</label>
+        <div style="margin: 10px 0;">
+            <input type="checkbox" onclick="togglePassword()"> Show Passwords
         </div>
 
         <button type="submit" class="btn">Register</button>
     </form>
-    
-    <p style="margin-top: 15px;">
-        Already have an account? <a href="login.php">Login here</a>
-    </p>
 </div>
 
 <script>
-// Numeric only validation for phone field[cite: 6]
-function validatePhone() {
-    var phoneInput = document.getElementById("phoneInput");
-    var phoneError = document.getElementById("phoneError");
-    var cleanedValue = phoneInput.value.replace(/[^0-9]/g, '');
+function checkRequirements() {
+    var val = document.getElementById("regPassword").value;
     
-    if (phoneInput.value !== cleanedValue) {
-        phoneError.style.display = "block";
-        phoneInput.value = cleanedValue;
+    // Check and update colors
+    document.getElementById("len").className = val.length >= 15 ? "requirement valid" : "requirement";
+    document.getElementById("upper").className = /[A-Z]/.test(val) ? "requirement valid" : "requirement";
+    document.getElementById("lower").className = /[a-z]/.test(val) ? "requirement valid" : "requirement";
+    document.getElementById("special").className = /[^\w]/.test(val) ? "requirement valid" : "requirement";
+    
+    checkMatch(); // Re-verify match if main password changes
+}
+
+function checkMatch() {
+    var p1 = document.getElementById("regPassword").value;
+    var p2 = document.getElementById("confirmPassword").value;
+    var hint = document.getElementById("matchError");
+
+    if (p1 !== p2 && p2 !== "") {
+        hint.style.display = "block";
     } else {
-        phoneError.style.display = "none";
+        hint.style.display = "none";
     }
 }
 
-// Toggle Password Visibility Logic[cite: 6]
+function validatePhone() {
+    var input = document.getElementById("phoneInput");
+    input.value = input.value.replace(/[^0-9]/g, ''); // Numeric only[cite: 6]
+}
+
 function togglePassword() {
-    var x = document.getElementById("regPassword");
-    x.type = (x.type === "password") ? "text" : "password";
+    var p1 = document.getElementById("regPassword");
+    var p2 = document.getElementById("confirmPassword");
+    p1.type = p1.type === "password" ? "text" : "password";
+    p2.type = p2.type === "password" ? "text" : "password";
 }
 </script>
 
