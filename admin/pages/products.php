@@ -2,283 +2,76 @@
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
 requireLogin();
-
 $db = getDB();
 $page_title = 'Manage Products';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    $name = sanitize($_POST['name'] ?? '');
-    $category_id = (int)($_POST['category_id'] ?? 0);
+    $action      = $_POST['action'] ?? '';
+    $name        = sanitize($_POST['name'] ?? '');
+    $cat_id      = (int)($_POST['category_id'] ?? 0);
     $description = sanitize($_POST['description'] ?? '');
-    $price = (float)($_POST['price'] ?? 0);
-    $sale_price = $_POST['sale_price'] ? (float)$_POST['sale_price'] : null;
-    $stock = (int)($_POST['stock'] ?? 0);
-    $unit = sanitize($_POST['unit'] ?? 'piece');
-    $status = $_POST['status'] ?? 'active';
-    $featured = isset($_POST['featured']) ? 1 : 0;
-    $image = sanitize($_POST['image'] ?? '');
-    $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
+    $price       = (float)($_POST['price'] ?? 0);
+    $stock       = (int)($_POST['stock_quantity'] ?? 0);
+    $image       = sanitize($_POST['product_image'] ?? '');
 
     if ($action === 'add') {
-        $existing = $db->query("SELECT id FROM products WHERE slug='$slug'")->fetch_assoc();
-        if ($existing) $slug .= '-' . time();
-        $stmt = $db->prepare("INSERT INTO products (category_id,name,slug,description,price,sale_price,stock,unit,image,status,featured) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-        $stmt->bind_param("isssddiissi", $category_id,$name,$slug,$description,$price,$sale_price,$stock,$unit,$image,$status,$featured);
+        $stmt = $db->prepare("INSERT INTO products (category_id,name,description,price,stock_quantity,product_image) VALUES (?,?,?,?,?,?)");
+        $stmt->bind_param("issdis", $cat_id, $name, $description, $price, $stock, $image);
         $stmt->execute();
-        redirect('products.php', 'Product added successfully!');
+        redirect('products.php', 'Product added!');
     } elseif ($action === 'edit') {
-        $id = (int)$_POST['id'];
-        $stmt = $db->prepare("UPDATE products SET category_id=?,name=?,description=?,price=?,sale_price=?,stock=?,unit=?,image=?,status=?,featured=? WHERE id=?");
-        $stmt->bind_param("issddiissii", $category_id,$name,$description,$price,$sale_price,$stock,$unit,$image,$status,$featured,$id);
+        $id = (int)$_POST['product_id'];
+        $stmt = $db->prepare("UPDATE products SET category_id=?,name=?,description=?,price=?,stock_quantity=?,product_image=? WHERE product_id=?");
+        $stmt->bind_param("issdisi", $cat_id, $name, $description, $price, $stock, $image, $id);
         $stmt->execute();
-        redirect('products.php', 'Product updated successfully!');
+        redirect('products.php', 'Product updated!');
     }
 }
 
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $db->query("DELETE FROM products WHERE id=$id");
+    $db->query("DELETE FROM products WHERE product_id=$id");
     redirect('products.php', 'Product deleted.', 'info');
 }
 
-if (isset($_GET['toggle'])) {
-    $id = (int)$_GET['toggle'];
-    $db->query("UPDATE products SET status=IF(status='active','inactive','active') WHERE id=$id");
-    redirect('products.php', 'Product status updated.');
-}
-
-// View toggle: table or grid
-$view = $_GET['view'] ?? 'table';
-
-// Filters
-$search = sanitize($_GET['search'] ?? '');
+$view       = $_GET['view'] ?? 'table';
+$search     = sanitize($_GET['search'] ?? '');
 $filter_cat = (int)($_GET['category'] ?? 0);
-$filter_status = $_GET['status'] ?? '';
 $where = "WHERE 1";
-if ($search) $where .= " AND (p.name LIKE '%$search%' OR p.description LIKE '%$search%')";
-if ($filter_cat) $where .= " AND p.category_id=$filter_cat";
-if ($filter_status) $where .= " AND p.status='$filter_status'";
+if ($search)     $where .= " AND p.name LIKE '%$search%'";
+if ($filter_cat) $where .= " AND p.category_id = $filter_cat";
 
-$products = $db->query("SELECT p.*, c.name as cat_name FROM products p LEFT JOIN categories c ON p.category_id=c.id $where ORDER BY p.created_at DESC");
-$total = $db->query("SELECT COUNT(*) as cnt FROM products p $where")->fetch_assoc()['cnt'];
+$products = $db->query("
+    SELECT p.*, c.category_name
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    $where
+    ORDER BY p.created_at DESC
+");
+$rows  = [];
+while ($r = $products->fetch_assoc()) $rows[] = $r;
+$total = count($rows);
 
-$categories = $db->query("SELECT * FROM categories WHERE status='active' ORDER BY name");
+$cats_res = $db->query("SELECT * FROM categories ORDER BY category_name");
 $cats = [];
-while ($c = $categories->fetch_assoc()) $cats[] = $c;
-
-$rows = [];
-while ($p = $products->fetch_assoc()) $rows[] = $p;
+while ($c = $cats_res->fetch_assoc()) $cats[] = $c;
 
 require_once '../includes/header.php';
 ?>
 
-<style>
-/* Product Grid View */
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
-    padding: 20px;
-}
-
-.product-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    transition: all 0.2s;
-    position: relative;
-}
-
-.product-card:hover {
-    border-color: rgba(63,185,80,0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-}
-
-.product-card-img {
-    width: 100%;
-    height: 160px;
-    object-fit: cover;
-    display: block;
-    background: var(--bg2);
-}
-
-.product-card-img-placeholder {
-    width: 100%;
-    height: 160px;
-    background: var(--bg2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 42px;
-}
-
-.product-card-body {
-    padding: 12px;
-}
-
-.product-card-cat {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--green);
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.product-card-name {
-    font-weight: 700;
-    font-size: 13.5px;
-    margin-bottom: 6px;
-    line-height: 1.3;
-    font-family: var(--font-head);
-}
-
-.product-card-price {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 10px;
-}
-
-.product-card-price .current {
-    font-weight: 800;
-    font-size: 15px;
-    color: var(--green);
-}
-
-.product-card-price .original {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-decoration: line-through;
-}
-
-.product-card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
-}
-
-.product-card-stock {
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.product-card-actions {
-    display: flex;
-    gap: 4px;
-}
-
-.featured-badge {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    background: rgba(227,179,65,0.9);
-    color: #000;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 20px;
-    backdrop-filter: blur(4px);
-}
-
-.sale-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(248,81,73,0.9);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 20px;
-}
-
-.inactive-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--red);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-/* Table image thumbnail */
-.product-thumb {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    object-fit: cover;
-    border: 1px solid var(--border);
-    background: var(--bg3);
-}
-
-.product-thumb-placeholder {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-}
-
-/* View toggle buttons */
-.view-toggle {
-    display: flex;
-    gap: 4px;
-}
-
-.view-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: all 0.15s;
-    text-decoration: none;
-}
-
-.view-btn.active, .view-btn:hover {
-    background: var(--bg3);
-    color: var(--text);
-    border-color: var(--green);
-    color: var(--green);
-}
-</style>
-
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-    <div style="font-size:13px;color:var(--text-muted)"><?= $total ?> products found</div>
+    <p style="color:var(--text3);font-size:13px"><?= $total ?> products found</p>
     <div style="display:flex;gap:10px;align-items:center">
-        <!-- View Toggle -->
         <div class="view-toggle">
-            <a href="?view=table&search=<?= $search ?>&category=<?= $filter_cat ?>&status=<?= $filter_status ?>" class="view-btn <?= $view==='table'?'active':'' ?>" title="Table View">☰</a>
-            <a href="?view=grid&search=<?= $search ?>&category=<?= $filter_cat ?>&status=<?= $filter_status ?>" class="view-btn <?= $view==='grid'?'active':'' ?>" title="Grid View">⊞</a>
+            <a href="?view=table&search=<?= $search ?>&category=<?= $filter_cat ?>" class="view-btn <?= $view==='table'?'active':'' ?>" title="Table">☰</a>
+            <a href="?view=grid&search=<?= $search ?>&category=<?= $filter_cat ?>"  class="view-btn <?= $view==='grid'?'active':'' ?>"  title="Grid">⊞</a>
         </div>
         <button class="btn btn-primary" onclick="openModal('addModal')">＋ Add Product</button>
     </div>
 </div>
 
 <div class="card">
-    <!-- Filters -->
+    <!-- FILTERS -->
     <div class="filters-row">
         <form method="GET" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="hidden" name="view" value="<?= $view ?>">
@@ -289,65 +82,53 @@ require_once '../includes/header.php';
             <select name="category" onchange="this.form.submit()">
                 <option value="">All Categories</option>
                 <?php foreach ($cats as $c): ?>
-                <option value="<?= $c['id'] ?>" <?= $filter_cat==$c['id']?'selected':'' ?>><?= sanitize($c['name']) ?></option>
+                <option value="<?= $c['category_id'] ?>" <?= $filter_cat==$c['category_id']?'selected':'' ?>>
+                    <?= sanitize($c['category_name']) ?>
+                </option>
                 <?php endforeach; ?>
             </select>
-            <select name="status" onchange="this.form.submit()">
-                <option value="">All Status</option>
-                <option value="active" <?= $filter_status==='active'?'selected':'' ?>>Active</option>
-                <option value="inactive" <?= $filter_status==='inactive'?'selected':'' ?>>Inactive</option>
-            </select>
-            <?php if ($search || $filter_cat || $filter_status): ?>
+            <?php if ($search || $filter_cat): ?>
             <a href="products.php?view=<?= $view ?>" class="btn btn-ghost btn-sm">✕ Clear</a>
             <?php endif; ?>
         </form>
     </div>
 
     <?php if (empty($rows)): ?>
-        <div class="empty-state"><div class="empty-icon">📦</div><p>No products found</p></div>
+        <div class="empty-state"><div class="ei">📦</div><p>No products found</p></div>
 
     <?php elseif ($view === 'grid'): ?>
-    <!-- ===================== GRID VIEW ===================== -->
+    <!-- GRID VIEW -->
     <div class="product-grid">
         <?php foreach ($rows as $p): ?>
         <div class="product-card">
-            <?php if ($p['status'] === 'inactive'): ?>
-            <div class="inactive-overlay">Inactive</div>
-            <?php endif; ?>
-
-            <?php if ($p['featured']): ?>
-            <div class="featured-badge">⭐ Featured</div>
-            <?php endif; ?>
-
-            <?php if ($p['sale_price']): ?>
-            <div class="sale-badge">SALE</div>
-            <?php endif; ?>
-
-            <?php if ($p['image']): ?>
-            <img src="<?= $p['image'] ?>" alt="<?= sanitize($p['name']) ?>" class="product-card-img"
+            <?php if ($p['product_image']): ?>
+            <img src="<?= sanitize($p['product_image']) ?>" class="product-card-img" alt="<?= sanitize($p['name']) ?>"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
             <div class="product-card-img-placeholder" style="display:none">📦</div>
             <?php else: ?>
             <div class="product-card-img-placeholder">📦</div>
             <?php endif; ?>
 
+            <?php if ($p['stock_quantity'] <= 5): ?>
+            <div class="card-badge card-badge-right">LOW STOCK</div>
+            <?php endif; ?>
+
             <div class="product-card-body">
-                <div class="product-card-cat"><?= sanitize($p['cat_name']) ?></div>
+                <div class="product-card-cat"><?= sanitize($p['category_name']) ?></div>
                 <div class="product-card-name"><?= sanitize($p['name']) ?></div>
                 <div class="product-card-price">
-                    <span class="current"><?= formatMYR($p['sale_price'] ?? $p['price']) ?></span>
-                    <?php if ($p['sale_price']): ?>
-                    <span class="original"><?= formatMYR($p['price']) ?></span>
-                    <?php endif; ?>
+                    <span class="cur"><?= formatRM($p['price']) ?></span>
                 </div>
                 <div class="product-card-footer">
-                    <span class="product-card-stock" style="color:<?= $p['stock']<=5?'var(--red)':($p['stock']<=20?'var(--yellow)':'var(--text-muted)') ?>">
-                        📦 <?= $p['stock'] ?> <?= $p['unit'] ?>
+                    <span class="product-card-stock"
+                          style="color:<?= $p['stock_quantity']<=5?'var(--red)':($p['stock_quantity']<=20?'var(--accent2)':'var(--text3)') ?>">
+                        📦 <?= $p['stock_quantity'] ?> in stock
                     </span>
-                    <div class="product-card-actions">
-                        <button class="btn btn-ghost btn-sm btn-icon" onclick="editProduct(<?= htmlspecialchars(json_encode($p)) ?>)" title="Edit">✏️</button>
-                        <a href="products.php?toggle=<?= $p['id'] ?>&view=grid" class="btn btn-ghost btn-sm btn-icon" onclick="return confirm('Toggle status?')" title="Toggle">🔄</a>
-                        <a href="products.php?delete=<?= $p['id'] ?>&view=grid" class="btn btn-danger btn-sm btn-icon" onclick="return confirm('Delete?')" title="Delete">🗑</a>
+                    <div style="display:flex;gap:5px">
+                        <button class="btn btn-orange btn-sm btn-icon" onclick="editProduct(<?= htmlspecialchars(json_encode($p)) ?>)">✏️</button>
+                        <a href="products.php?delete=<?= $p['product_id'] ?>&view=grid"
+                           class="btn btn-danger btn-sm btn-icon"
+                           onclick="return confirm('Delete product?')">🗑</a>
                     </div>
                 </div>
             </div>
@@ -356,71 +137,61 @@ require_once '../includes/header.php';
     </div>
 
     <?php else: ?>
-    <!-- ===================== TABLE VIEW ===================== -->
+    <!-- TABLE VIEW -->
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
                     <th>#</th>
                     <th>Image</th>
-                    <th>Product</th>
+                    <th>Product Name</th>
                     <th>Category</th>
                     <th>Price</th>
                     <th>Stock</th>
-                    <th>Unit</th>
-                    <th>⭐</th>
-                    <th>Status</th>
+                    <th>Added</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
             <?php $i=1; foreach ($rows as $p): ?>
-                <tr>
-                    <td style="color:var(--text-muted)"><?= $i++ ?></td>
-                    <td>
-                        <?php if ($p['image']): ?>
-                        <img src="<?= $p['image'] ?>" alt="<?= sanitize($p['name']) ?>" class="product-thumb"
-                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                        <div class="product-thumb-placeholder" style="display:none">📦</div>
-                        <?php else: ?>
-                        <div class="product-thumb-placeholder">📦</div>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <div style="font-weight:600"><?= sanitize($p['name']) ?></div>
-                        <?php if ($p['sale_price']): ?>
-                        <div style="font-size:11px;color:var(--red);font-weight:600">🏷 ON SALE</div>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <span style="background:var(--bg3);padding:3px 8px;border-radius:5px;font-size:12px">
-                            <?= sanitize($p['cat_name']) ?>
-                        </span>
-                    </td>
-                    <td>
-                        <?php if ($p['sale_price']): ?>
-                        <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px"><?= formatMYR($p['price']) ?></span><br>
-                        <strong style="color:var(--green)"><?= formatMYR($p['sale_price']) ?></strong>
-                        <?php else: ?>
-                        <strong><?= formatMYR($p['price']) ?></strong>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <span style="color:<?= $p['stock']<=5?'var(--red)':($p['stock']<=20?'var(--yellow)':'var(--green)') ?>;font-weight:600">
-                            <?= $p['stock'] ?>
-                        </span>
-                    </td>
-                    <td style="color:var(--text-muted)"><?= $p['unit'] ?></td>
-                    <td><?= $p['featured'] ? '⭐' : '—' ?></td>
-                    <td><span class="badge badge-<?= $p['status'] ?>"><?= ucfirst($p['status']) ?></span></td>
-                    <td>
-                        <div style="display:flex;gap:6px">
-                            <button class="btn btn-ghost btn-sm btn-icon" onclick="editProduct(<?= htmlspecialchars(json_encode($p)) ?>)">✏️</button>
-                            <a href="products.php?toggle=<?= $p['id'] ?>" class="btn btn-ghost btn-sm btn-icon" onclick="return confirm('Toggle status?')">🔄</a>
-                            <a href="products.php?delete=<?= $p['id'] ?>" class="btn btn-danger btn-sm btn-icon" onclick="return confirm('Delete this product?')">🗑</a>
-                        </div>
-                    </td>
-                </tr>
+            <tr>
+                <td style="color:var(--text3)"><?= $i++ ?></td>
+                <td>
+                    <?php if ($p['product_image']): ?>
+                    <img src="<?= sanitize($p['product_image']) ?>" class="product-thumb" alt=""
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="product-thumb-placeholder" style="display:none">📦</div>
+                    <?php else: ?>
+                    <div class="product-thumb-placeholder">📦</div>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <div style="font-weight:600"><?= sanitize($p['name']) ?></div>
+                    <?php if ($p['description']): ?>
+                    <div style="font-size:11px;color:var(--text3)"><?= substr(sanitize($p['description']),0,50) ?>...</div>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <span style="background:var(--green-bg);color:var(--green);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">
+                        <?= sanitize($p['category_name']) ?>
+                    </span>
+                </td>
+                <td><strong style="color:var(--green)"><?= formatRM($p['price']) ?></strong></td>
+                <td>
+                    <span style="font-weight:700;color:<?= $p['stock_quantity']<=5?'var(--red)':($p['stock_quantity']<=20?'var(--accent2)':'var(--text)') ?>">
+                        <?= $p['stock_quantity'] ?>
+                    </span>
+                </td>
+                <td style="color:var(--text3);font-size:12px"><?= date('d M Y', strtotime($p['created_at'])) ?></td>
+                <td>
+                    <div style="display:flex;gap:6px">
+                        <button class="btn btn-orange btn-sm btn-icon" onclick="editProduct(<?= htmlspecialchars(json_encode($p)) ?>)">✏️</button>
+                        <a href="products.php?delete=<?= $p['product_id'] ?>"
+                           class="btn btn-danger btn-sm btn-icon"
+                           onclick="return confirm('Delete this product?')">🗑</a>
+                    </div>
+                </td>
+            </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
@@ -428,7 +199,7 @@ require_once '../includes/header.php';
     <?php endif; ?>
 </div>
 
-<!-- ===================== ADD MODAL ===================== -->
+<!-- ADD MODAL -->
 <div class="modal-overlay" id="addModal">
     <div class="modal modal-lg">
         <div class="modal-header">
@@ -448,17 +219,18 @@ require_once '../includes/header.php';
                         <select name="category_id" required>
                             <option value="">Select category</option>
                             <?php foreach ($cats as $c): ?>
-                            <option value="<?= $c['id'] ?>"><?= sanitize($c['name']) ?></option>
+                            <option value="<?= $c['category_id'] ?>"><?= sanitize($c['category_name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="text" name="image" id="add_image_url" placeholder="https://images.unsplash.com/..." oninput="previewImage('add_preview', this.value)">
-                    <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
-                        <img id="add_preview" src="" alt="" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);display:none;background:var(--bg3)">
-                        <span style="font-size:12px;color:var(--text-muted)">Paste an image URL to preview</span>
+                    <label>Product Image URL</label>
+                    <input type="text" name="product_image" id="add_img_url"
+                           placeholder="https://images.unsplash.com/..."
+                           oninput="previewImg('add_img_prev', this.value)">
+                    <div style="margin-top:10px">
+                        <img id="add_img_prev" src="" style="width:80px;height:80px;border-radius:10px;object-fit:cover;border:1px solid var(--border);display:none" alt="">
                     </div>
                 </div>
                 <div class="form-group">
@@ -471,43 +243,8 @@ require_once '../includes/header.php';
                         <input type="number" name="price" step="0.01" min="0" required placeholder="0.00">
                     </div>
                     <div class="form-group">
-                        <label>Sale Price (RM)</label>
-                        <input type="number" name="sale_price" step="0.01" min="0" placeholder="Leave blank if no sale">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Stock *</label>
-                        <input type="number" name="stock" min="0" required placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Unit</label>
-                        <select name="unit">
-                            <option value="piece">Piece</option>
-                            <option value="kg">Kilogram (kg)</option>
-                            <option value="g">Gram (g)</option>
-                            <option value="liter">Liter</option>
-                            <option value="pack">Pack</option>
-                            <option value="bunch">Bunch</option>
-                            <option value="dozen">Dozen</option>
-                            <option value="loaf">Loaf</option>
-                            <option value="head">Head</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select name="status">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="display:flex;align-items:flex-end">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:14px">
-                            <input type="checkbox" name="featured" style="width:auto">
-                            Mark as Featured Product
-                        </label>
+                        <label>Stock Quantity *</label>
+                        <input type="number" name="stock_quantity" min="0" required placeholder="0">
                     </div>
                 </div>
             </div>
@@ -519,7 +256,7 @@ require_once '../includes/header.php';
     </div>
 </div>
 
-<!-- ===================== EDIT MODAL ===================== -->
+<!-- EDIT MODAL -->
 <div class="modal-overlay" id="editModal">
     <div class="modal modal-lg">
         <div class="modal-header">
@@ -528,7 +265,7 @@ require_once '../includes/header.php';
         </div>
         <form method="POST">
             <input type="hidden" name="action" value="edit">
-            <input type="hidden" name="id" id="e_id">
+            <input type="hidden" name="product_id" id="e_pid">
             <div class="modal-body">
                 <div class="form-row">
                     <div class="form-group">
@@ -539,15 +276,56 @@ require_once '../includes/header.php';
                         <label>Category *</label>
                         <select name="category_id" id="e_cat" required>
                             <?php foreach ($cats as $c): ?>
-                            <option value="<?= $c['id'] ?>"><?= sanitize($c['name']) ?></option>
+                            <option value="<?= $c['category_id'] ?>"><?= sanitize($c['category_name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="text" name="image" id="e_image" placeholder="https://images.unsplash.com/..." oninput="previewImage('e_preview', this.value)">
-                    <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
-                        <img id="e_preview" src="" alt="" style="width:80px;height:80px;border-radius:8px;object-fit:cover;b
+                    <label>Product Image URL</label>
+                    <input type="text" name="product_image" id="e_img"
+                           oninput="previewImg('e_img_prev', this.value)">
+                    <div style="margin-top:10px">
+                        <img id="e_img_prev" src="" style="width:80px;height:80px;border-radius:10px;object-fit:cover;border:1px solid var(--border)" alt="">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" id="e_desc"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price (RM) *</label>
+                        <input type="number" name="price" id="e_price" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Quantity *</label>
+                        <input type="number" name="stock_quantity" id="e_stock" min="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editProduct(p) {
+    document.getElementById('e_pid').value   = p.product_id;
+    document.getElementById('e_name').value  = p.name;
+    document.getElementById('e_cat').value   = p.category_id;
+    document.getElementById('e_desc').value  = p.description || '';
+    document.getElementById('e_price').value = p.price;
+    document.getElementById('e_stock').value = p.stock_quantity;
+    document.getElementById('e_img').value   = p.product_image || '';
+    const prev = document.getElementById('e_img_prev');
+    if (p.product_image) { prev.src = p.product_image; prev.style.display='block'; }
+    else prev.style.display = 'none';
+    openModal('editModal');
+}
+</script>
 
 <?php require_once '../includes/footer.php'; ?>
