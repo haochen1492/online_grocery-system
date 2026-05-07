@@ -6,8 +6,8 @@
     <a href="about.php">About Us</a>
     <a href="cart.php">Cart</a> 
 
-    <?php if (isset($_SESSION['user_id'])): ?>
-        <a href="orders.php">Order History</a>
+    <?php if (isset($_SESSION['customer_id'])): ?>
+        <a href="order_history.php">Order History</a>
         <a href="profile.php">Profile</a>
         <a href="logout.php">Logout</a>
     <?php else: ?>

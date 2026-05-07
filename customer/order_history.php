@@ -3,18 +3,17 @@ include '../includes/dbconnect.php';
 session_start();
 
 /*check if user is logged in
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['customer_id'])) {
     header('Location: login.php');
     exit;
 }*/
 
 // Fetch user orders
-if (isset($_SESSION['user_id'])) {
-    $userId = $_SESSION['user_id'];
+if (isset($_SESSION['customer_id'])) {
+    $customerId = $_SESSION['customer_id'];
     // Fetch orders for the logged-in user
-    $stmt = $pdo->prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC');
-    $stmt->execute([$userId]);
-    $orders = $stmt->fetchAll();
+    $stmt = $conn->prepare('SELECT * FROM orders WHERE customer_id = ? ');
+    $stmt->execute([$customerId]);
 }
 
 ?>

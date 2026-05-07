@@ -2,11 +2,48 @@
 session_start();
 require '../includes/dbconnect.php';
 
-/*Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}*/
+//payment method handling
+if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
+    if($_POST['payment_method'] === 'credit_card') {
+        header('Location: payment.php');
+        exit;
+    } elseif ($_POST['payment_method'] === 'cash_on_delivery') {
+        $total_amount = $_POST['total_amount'] ?? 0.00; // Calculate total amount based on cart items
+        $payment_method = 'cash_on_delivery';
+        $status = 'pending';
+        $customer_id = $_SESSION['customer_id']; // Assuming customer ID is stored in session
+
+        // Handle cash on delivery logic here (e.g., save order to database)
+        $stmt = $conn->prepare("INSERT INTO orders (customer_id, total_price, payment_method, status) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("idss", $_SESSION['customer_id'], $total_price, $payment_method, $status);
+        $stmt->execute();
+
+        //get the last inserted order ID
+        $order_id = $conn->insert_id;
+
+        // Insert order items into order_details table
+        $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity) VALUES (?, ?, ?)");
+        foreach ($_SESSION['cart'] as $product_id => $quantity) {
+            $stmt_items->bind_param("iii", $order_id, $product_id, $quantity);
+            $stmt_items->execute();
+        }
+        // Direct to a confirmation page
+        unset($_SESSION['cart']);
+        header('Location: order_confirmation.php');
+        
+        exit;
+    } else {
+        echo "Invalid payment method selected.";
+        exit;
+    }
+}
+
+//fetch address from logged in user
+$customer_id = $_SESSION['customer_id'];
+$stmt = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ?");
+$stmt->bind_param("i", $customer_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
 //handle address form submission
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,6 +55,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($unit_no) && !empty($street) && !empty($city) && !empty($state) && !empty($postal_code)) {
         $newAddress = [
+            'unit_no' => $unit_no,
             'street' => $street,
             'city' => $city,
             'state' => $state,
@@ -35,6 +73,11 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     exit;
 }
+
+if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart'])) {
+    $cart = $_POST['cart'];
+    $_SESSION['cart'] = $cart;
+}
 ?>
 
 <!DOCTYPE html>
@@ -46,12 +89,12 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="includes/styles.css">
 </head>
 <body>
-    <div class="checkout-container">
+    <div class="checkout-container" action="checkout.php" method="POST">
         <h1>Checkout</h1>
         <p>Products Ordered:</p>
         <ul>
         </ul>
-        <p>Total Amount: RM0.00</p>
+        <p>Total Amount: RM<?php echo number_format($totalAmount, 2); ?></p>
 
         <label for="address">Shipping Address:</label><br>
         <div id="saved-addresses">
@@ -73,34 +116,36 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo '<p>No saved addresses found.</p>';
             }
             ?>
-        <button type="button" onclick="showAddressForm()">Add New Address</button><br><br>
+        <button type="button" onclick="showAddressForm()">Add New Address</button><br>
             <div class="address-form" id="address-form">
                 <h2>Enter Shipping Address</h2>
                 <form id="addressForm" method="POST">
-                    <label for="unit_no">Unit No./Block/Building</label><br>
-                    <input type="text" id="unit_no" name="unit_no" required><br>
-                    <label for="street">Street:</label><br>
-                    <input type="text" id="street" name="street" required><br>
-                    <label for="city">City:</label><br>
-                    <input type="text" id="city" name="city" required><br>
-                    <label for="state">State:</label><br>
-                    <input type="text" id="state" name="state" required><br>
-                    <label for="postal_code">Postal Code:</label><br>
-                    <input type="text" id="postal_code" name="postal_code" required><br><br>
+                    <label for="unit_no">Unit No./Block/Building</label>
+                    <input type="text" id="unit_no" name="unit_no" required>
+                    <label for="street">Street:</label>
+                    <input type="text" id="street" name="street" required>
+                    <label for="city">City:</label>
+                    <input type="text" id="city" name="city" required>
+                    <label for="state">State:</label>
+                    <input type="text" id="state" name="state" required>
+                    <label for="postal_code">Postal Code:</label>
+                    <input type="text" id="postal_code" name="postal_code" required>
                     <button type="submit" onclick="saveAddress()">Save Address</button>
                 </form>
             </div>
-        <label for="payment_method">Payment Method:</label><br>
-        <select id="payment_method" name="payment_method" required>
-            <option value="">Select a payment method</option>
-            <option value="credit_card">Credit/Debit Card</option>
-            <option value="cash_on_delivery">Cash on Delivery</option>
-        </select><br>
-        <p>Note: For Cash on Delivery, please have the exact amount ready at the time of delivery.</p>
-        <p>Total amount: RM0.00</p>
-        <p>Shipping fee: RM0.00</p>
-        <p>Grand Total: RM0.00</p>
-        <button type="submit">Place Order</button>
+        <form method="POST" action="checkout.php">
+            <label for="payment_method">Payment Method:</label><br>
+            <select id="payment_method" name="payment_method" required>
+                <option value="">Select a payment method</option>
+                <option value="credit_card">Credit/Debit Card</option>
+                <option value="cash_on_delivery">Cash on Delivery</option>
+            </select><br>
+            <p>Note: For Cash on Delivery, please have the exact amount ready at the time of delivery.</p>
+            <p>Total amount: RM<?php echo number_format($totalAmount, 2); ?></p>
+            <p>Shipping fee: RM<?php echo number_format($shippingFee, 2); ?></p>
+            <p>Grand Total: RM<?php echo number_format($grandTotal, 2); ?></p>
+            <button type="submit" >Place Order</button>
+        </form>
     </div>
 </body>
 </html>
