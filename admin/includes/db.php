@@ -2,7 +2,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'grocery_admin');
+define('DB_NAME', 'online_grocery');
 
 function getDB() {
     static $conn = null;
