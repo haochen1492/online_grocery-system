@@ -3,12 +3,12 @@ include '../includes/dbconnect.php';
 session_start();
 
 // Redirect to login if not authenticated
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['customer_id'])) {
     header("Location: login.php");
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+$customer_id = $_SESSION['customer_id'];
 $message = "";
 
 // 1. HANDLE PROFILE INFORMATION UPDATE
@@ -17,7 +17,7 @@ if (isset($_POST['update_profile'])) {
     $phone = $_POST['phone'];
     
     $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_phone = ? WHERE customer_id = ?");
-    if ($stmt->execute([$name, $phone, $user_id])) {
+    if ($stmt->execute([$name, $phone, $customer_id])) {
         $_SESSION['username'] = $name; // Update session name for header display
         $message = "Profile updated successfully!";
     }
@@ -30,14 +30,14 @@ if (isset($_POST['change_password'])) {
     $confirm_pass = $_POST['confirm_password'];
 
     $stmt = $conn->prepare("SELECT customer_password FROM customers WHERE customer_id = ?");
-    $stmt->execute([$user_id]);
+    $stmt->execute([$customer_id]);
     $user = $stmt->fetch();
 
     if (password_verify($old_pass, $user['customer_password'])) {
         if ($new_pass === $confirm_pass) {
             $hashed_new = password_hash($new_pass, PASSWORD_DEFAULT);
             $update = $conn->prepare("UPDATE customers SET customer_password = ? WHERE customer_id = ?");
-            $update->execute([$hashed_new, $user_id]);
+            $update->execute([$hashed_new, $customer_id]);
             $message = "Password changed successfully!";
         } else {
             $message = "New passwords do not match!";
@@ -49,7 +49,7 @@ if (isset($_POST['change_password'])) {
 
 // 3. FETCH CURRENT DATA FOR THE FORM
 $stmt = $conn->prepare("SELECT * FROM customers WHERE customer_id = ?");
-$stmt->execute([$user_id]);
+$stmt->execute([$customer_id]);
 $current_user = $stmt->fetch();
 ?>
 
