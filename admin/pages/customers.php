@@ -1,212 +1,213 @@
 <?php
-require_once '../includes/auth.php';
-require_once '../includes/db.php';
-requireLogin();
-$db = getDB();
-$page_title = 'Manage Customers';
+session_start();
+require 'config/db.php';
+require 'includes/header.php';
+$pageTitle = "Manage Customers";
 
-// ADD / EDIT
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action   = $_POST['action'] ?? '';
-    $name     = sanitize($_POST['customer_name'] ?? '');
-    $email    = sanitize($_POST['customer_email'] ?? '');
-    $phone    = sanitize($_POST['customer_phone'] ?? '');
-    $password = $_POST['customer_password'] ?? '';
+$msg = '';
 
-    if ($action === 'add') {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $db->prepare("INSERT INTO customers (customer_name,customer_email,customer_password,customer_phone) VALUES (?,?,?,?)");
-        $stmt->bind_param("ssss", $name,$email,$hash,$phone);
-        if ($stmt->execute()) redirect('customers.php','Customer added!');
-        else redirect('customers.php','Email already exists.','error');
-    } elseif ($action === 'edit') {
-        $id = (int)$_POST['customer_id'];
-        if ($password) {
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $db->prepare("UPDATE customers SET customer_name=?,customer_email=?,customer_phone=?,customer_password=? WHERE customer_id=?");
-            $stmt->bind_param("ssssi",$name,$email,$phone,$hash,$id);
-        } else {
-            $stmt = $db->prepare("UPDATE customers SET customer_name=?,customer_email=?,customer_phone=? WHERE customer_id=?");
-            $stmt->bind_param("sssi",$name,$email,$phone,$id);
-        }
-        $stmt->execute();
-        redirect('customers.php','Customer updated!');
-    }
-}
-
+// Delete customer
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $db->query("DELETE FROM customers WHERE customer_id=$id");
-    redirect('customers.php','Customer deleted.','info');
+    $conn->query("DELETE FROM customers WHERE customer_id = $id");
+    header("Location: customers.php?deleted=1");
+    exit;
 }
 
-$search = sanitize($_GET['search'] ?? '');
-$where  = $search ? "WHERE customer_name LIKE '%$search%' OR customer_email LIKE '%$search%' OR customer_phone LIKE '%$search%'" : '';
-$result = $db->query("SELECT * FROM customers $where ORDER BY created_at DESC");
-$rows = [];
-while ($r = $result->fetch_assoc()) $rows[] = $r;
+if (isset($_GET['deleted'])) $msg = ['success', 'Customer deleted.'];
 
-require_once '../includes/header.php';
+// Search
+$search = trim($_GET['search'] ?? '');
+$where  = "WHERE 1=1";
+$params = [];
+$types  = "";
+if ($search) {
+    $where   .= " AND (c.customer_name LIKE ? OR c.customer_email LIKE ? OR c.customer_phone LIKE ?)";
+    $like     = "%$search%";
+    $params   = [$like, $like, $like];
+    $types    = "sss";
+}
+
+$sql  = "
+    SELECT c.*,
+           COUNT(DISTINCT o.order_id) AS total_orders,
+           COALESCE(SUM(o.total_price), 0) AS total_spent
+    FROM customers c
+    LEFT JOIN orders o ON c.customer_id = o.customer_id
+    $where
+    GROUP BY c.customer_id
+    ORDER BY c.created_at DESC
+";
+$stmt = $conn->prepare($sql);
+if ($types) $stmt->bind_param($types, ...$params);
+$stmt->execute();
+$customers = $stmt->get_result();
 ?>
+<?php require 'includes/sidebar.php'; ?>
+<div id="content-wrapper">
+<?php require 'includes/topbar.php'; ?>
+<div class="p-4">
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-    <p style="color:var(--text3);font-size:13px"><?= count($rows) ?> customers</p>
-    <button class="btn btn-primary" onclick="openModal('addModal')">＋ Add Customer</button>
+<?php if ($msg): ?>
+    <div class="alert alert-<?= $msg[0] ?> alert-dismissible fade show">
+        <?= $msg[1] ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+<!-- Search -->
+<div class="mb-3">
+    <form class="d-flex gap-2" method="GET">
+        <input type="text" name="search" class="form-control form-control-sm"
+               placeholder="Search by name, email or phone…"
+               value="<?= htmlspecialchars($search) ?>" style="max-width:300px">
+        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        <a href="customers.php" class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></a>
+    </form>
 </div>
 
-<div class="card">
-    <div class="filters-row">
-        <form method="GET" style="display:flex;gap:10px;align-items:center">
-            <div class="search-bar">
-                <span>🔍</span>
-                <input type="text" name="search" placeholder="Search name, email, phone..." value="<?= $search ?>">
-            </div>
-            <?php if ($search): ?><a href="customers.php" class="btn btn-ghost btn-sm">✕ Clear</a><?php endif; ?>
-        </form>
-    </div>
-
-    <div class="table-wrap">
-        <table>
-            <thead>
+<!-- Table -->
+<div class="content-card card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Orders</th>
+                        <th>Total Spent</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ($customers->num_rows === 0): ?>
+                    <tr><td colspan="8" class="text-center text-muted py-4">No customers found.</td></tr>
+                <?php endif; ?>
+                <?php while ($c = $customers->fetch_assoc()): ?>
                 <tr>
-                    <th>#</th>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Orders</th>
-                    <th>Joined</th>
-                    <th>Actions</th>
+                    <td><?= $c['customer_id'] ?></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-circle">
+                                <?= strtoupper(substr($c['customer_name'], 0, 1)) ?>
+                            </div>
+                            <strong><?= htmlspecialchars($c['customer_name']) ?></strong>
+                        </div>
+                    </td>
+                    <td><?= htmlspecialchars($c['customer_email']) ?></td>
+                    <td><?= htmlspecialchars($c['customer_phone'] ?? '—') ?></td>
+                    <td><span class="badge bg-primary rounded-pill"><?= $c['total_orders'] ?></span></td>
+                    <td class="text-success fw-semibold">$<?= number_format($c['total_spent'], 2) ?></td>
+                    <td class="text-muted small"><?= date('d M Y', strtotime($c['created_at'])) ?></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info me-1"
+                            data-bs-toggle="modal" data-bs-target="#viewModal"
+                            data-id="<?= $c['customer_id'] ?>"
+                            data-name="<?= htmlspecialchars($c['customer_name'], ENT_QUOTES) ?>"
+                            data-email="<?= htmlspecialchars($c['customer_email'], ENT_QUOTES) ?>"
+                            data-phone="<?= htmlspecialchars($c['customer_phone'] ?? '', ENT_QUOTES) ?>"
+                            data-joined="<?= date('d M Y', strtotime($c['created_at'])) ?>"
+                            data-orders="<?= $c['total_orders'] ?>"
+                            data-spent="<?= number_format($c['total_spent'], 2) ?>">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <a href="?delete=<?= $c['customer_id'] ?>" class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('Delete customer <?= htmlspecialchars($c['customer_name'], ENT_QUOTES) ?>? All their orders and addresses will also be deleted.')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-            <?php if (empty($rows)): ?>
-                <tr><td colspan="6"><div class="empty-state"><div class="ei">👥</div><p>No customers found</p></div></td></tr>
-            <?php else: $i=1; foreach ($rows as $c):
-                $orders = $db->query("SELECT COUNT(*) cnt FROM orders WHERE customer_id={$c['customer_id']}")->fetch_assoc()['cnt'];
-                $spent  = $db->query("SELECT COALESCE(SUM(total_price),0) t FROM orders WHERE customer_id={$c['customer_id']}")->fetch_assoc()['t'];
-            ?>
-            <tr>
-                <td style="color:var(--text3)"><?= $i++ ?></td>
-                <td>
-                    <div style="display:flex;align-items:center;gap:11px">
-                        <div style="width:38px;height:38px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green3);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--green);font-size:14px;flex-shrink:0">
-                            <?= strtoupper(substr($c['customer_name'],0,1)) ?>
-                        </div>
-                        <div>
-                            <div style="font-weight:600"><?= sanitize($c['customer_name']) ?></div>
-                            <div style="font-size:12px;color:var(--text3)"><?= sanitize($c['customer_email']) ?></div>
-                        </div>
-                    </div>
-                </td>
-                <td style="color:var(--text2)"><?= $c['customer_phone'] ?: '—' ?></td>
-                <td>
-                    <a href="orders.php?customer=<?= $c['customer_id'] ?>" style="color:var(--blue);font-weight:600">
-                        <?= $orders ?> orders
-                    </a>
-                    <div style="font-size:11px;color:var(--text3)"><?= formatRM($spent) ?> spent</div>
-                </td>
-                <td style="color:var(--text3);font-size:12px"><?= date('d M Y', strtotime($c['created_at'])) ?></td>
-                <td>
-                    <div style="display:flex;gap:6px">
-                        <button class="btn btn-orange btn-sm" onclick='editCustomer(<?= json_encode($c) ?>)'>✏️ Edit</button>
-                        <a href="customers.php?delete=<?= $c['customer_id'] ?>"
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('Delete customer <?= addslashes(sanitize($c['customer_name'])) ?>?')">🗑</a>
-                    </div>
-                </td>
-            </tr>
-            <?php endforeach; endif; ?>
-            </tbody>
-        </table>
+                <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+</div>
+</div>
 
-<!-- ADD MODAL -->
-<div class="modal-overlay" id="addModal">
-    <div class="modal modal-lg">
-        <div class="modal-header">
-            <span class="modal-title">Add New Customer</span>
-            <button class="modal-close" onclick="closeModal('addModal')">✕</button>
-        </div>
-        <form method="POST">
-            <input type="hidden" name="action" value="add">
+<!-- View Customer Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-circle text-success me-2"></i>Customer Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Full Name *</label>
-                        <input type="text" name="customer_name" required placeholder="Ahmad bin Hassan">
+                <div class="text-center mb-4">
+                    <div class="avatar-lg mx-auto mb-2" id="vm_avatar"></div>
+                    <h5 class="fw-bold mb-0" id="vm_name"></h5>
+                    <small class="text-muted" id="vm_email"></small>
+                </div>
+                <div class="row g-3 text-center">
+                    <div class="col-4">
+                        <div class="bg-light rounded-3 p-3">
+                            <div class="fw-bold text-primary fs-5" id="vm_orders"></div>
+                            <small class="text-muted">Orders</small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Email *</label>
-                        <input type="email" name="customer_email" required placeholder="email@example.com">
+                    <div class="col-4">
+                        <div class="bg-light rounded-3 p-3">
+                            <div class="fw-bold text-success fs-5" id="vm_spent"></div>
+                            <small class="text-muted">Spent</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-light rounded-3 p-3">
+                            <div class="fw-bold text-secondary fs-6" id="vm_joined"></div>
+                            <small class="text-muted">Joined</small>
+                        </div>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Phone</label>
-                        <input type="text" name="customer_phone" placeholder="012-3456789">
-                    </div>
-                    <div class="form-group">
-                        <label>Password *</label>
-                        <input type="password" name="customer_password" required placeholder="Set a password">
-                    </div>
-                </div>
+                <hr>
+                <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i><span id="vm_phone"></span></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" onclick="closeModal('addModal')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Add Customer</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- EDIT MODAL -->
-<div class="modal-overlay" id="editModal">
-    <div class="modal modal-lg">
-        <div class="modal-header">
-            <span class="modal-title">Edit Customer</span>
-            <button class="modal-close" onclick="closeModal('editModal')">✕</button>
         </div>
-        <form method="POST">
-            <input type="hidden" name="action" value="edit">
-            <input type="hidden" name="customer_id" id="ec_id">
-            <div class="modal-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Full Name *</label>
-                        <input type="text" name="customer_name" id="ec_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Email *</label>
-                        <input type="email" name="customer_email" id="ec_email" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Phone</label>
-                        <input type="text" name="customer_phone" id="ec_phone">
-                    </div>
-                    <div class="form-group">
-                        <label>New Password <span style="font-weight:400;text-transform:none">(leave blank to keep)</span></label>
-                        <input type="password" name="customer_password" placeholder="••••••••">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-            </div>
-        </form>
     </div>
 </div>
 
-<script>
-function editCustomer(c) {
-    document.getElementById('ec_id').value    = c.customer_id;
-    document.getElementById('ec_name').value  = c.customer_name;
-    document.getElementById('ec_email').value = c.customer_email;
-    document.getElementById('ec_phone').value = c.customer_phone || '';
-    openModal('editModal');
+<!-- Avatar styles -->
+<style>
+.avatar-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white; font-weight: 700; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }
-</script>
+.avatar-lg {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white; font-weight: 700; font-size: 1.8rem;
+    display: flex; align-items: center; justify-content: center;
+}
+</style>
 
-<?php require_once '../includes/footer.php'; ?>
+<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js)"></script>
+<script>
+const viewModal = document.getElementById('viewModal');
+viewModal.addEventListener('show.bs.modal', e => {
+    const b = e.relatedTarget;
+    document.getElementById('vm_name').textContent    = b.dataset.name;
+    document.getElementById('vm_email').textContent   = b.dataset.email;
+    document.getElementById('vm_phone').textContent   = b.dataset.phone || '—';
+    document.getElementById('vm_joined').textContent  = b.dataset.joined;
+    document.getElementById('vm_orders').textContent  = b.dataset.orders;
+    document.getElementById('vm_spent').textContent   = '$' + b.dataset.spent;
+    document.getElementById('vm_avatar').textContent  = b.dataset.name.charAt(0).toUpperCase();
+});
+
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('show');
+});
+</script>
+</body>
+</html>
+
