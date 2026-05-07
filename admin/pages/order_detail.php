@@ -1,111 +1,112 @@
 <?php
-require_once '../includes/auth.php';
-require_once '../includes/db.php';
-requireLogin();
-$db = getDB();
+session_start();
+require 'config/db.php';
+if (!isset($_SESSION['admin_id'])) exit('Unauthorized');
 
-$id = (int)($_GET['id'] ?? 0);
-if (!$id) { echo '<p>Invalid order.</p>'; exit; }
+$orderId = (int)($_GET['order_id'] ?? 0);
+if (!$orderId) exit('Invalid order.');
 
-$order = $db->query("
-    SELECT o.*,
-           c.customer_name, c.customer_email, c.customer_phone,
+// Order header
+$order = $conn->query("
+    SELECT o.*, c.customer_name, c.customer_email, c.customer_phone,
            a.unit_no, a.street, a.city, a.state, a.postal_code, a.country,
-           p.payment_status, p.payment_date, p.price as paid_amount
+           p.payment_status, p.payment_date
     FROM orders o
-    JOIN customers c  ON o.customer_id  = c.customer_id
-    LEFT JOIN addresses a ON o.address_id = a.address_id
-    LEFT JOIN payments p  ON o.order_id   = p.order_id
-    WHERE o.order_id = $id
+    JOIN customers c ON o.customer_id = c.customer_id
+    JOIN addresses a ON o.address_id  = a.address_id
+    LEFT JOIN payments p ON p.order_id = o.order_id
+    WHERE o.order_id = $orderId
 ")->fetch_assoc();
 
-if (!$order) { echo '<p>Order not found.</p>'; exit; }
+if (!$order) exit('Order not found.');
 
-$items = $db->query("
-    SELECT od.*, p.name, p.product_image
+// Order items
+$items = $conn->query("
+    SELECT od.quantity, od.product_price, pr.name, pr.product_image
     FROM order_details od
-    JOIN products p ON od.product_id = p.product_id
-    WHERE od.order_id = $id
+    JOIN products pr ON od.product_id = pr.product_id
+    WHERE od.order_id = $orderId
 ");
 ?>
-
-<div class="order-info-grid">
-    <div class="info-box">
-        <div class="info-box-label">👤 Customer</div>
-        <div class="info-box-value"><?= sanitize($order['customer_name']) ?></div>
-        <div class="info-box-sub"><?= sanitize($order['customer_email']) ?></div>
-        <div class="info-box-sub"><?= sanitize($order['customer_phone'] ?? '') ?></div>
-    </div>
-    <div class="info-box">
-        <div class="info-box-label">📅 Order Info</div>
-        <div class="info-box-value"><?= date('d M Y, g:i A', strtotime($order['order_date'])) ?></div>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-            <span class="badge badge-<?= $order['delivery_status'] ?>"><?= ucfirst($order['delivery_status']) ?></span>
-            <span class="badge badge-<?= $order['payment_status'] ?? 'pending' ?>"><?= ucfirst($order['payment_status'] ?? 'No Payment') ?></span>
+<div class="row g-3">
+    <!-- Customer & Address -->
+    <div class="col-md-6">
+        <div class="card border-0 bg-light rounded-3 p-3 h-100">
+            <h6 class="fw-bold text-success mb-3"><i class="bi bi-person-circle me-2"></i>Customer</h6>
+            <p class="mb-1"><strong><?= htmlspecialchars($order['customer_name']) ?></strong></p>
+            <p class="mb-1 text-muted small"><?= htmlspecialchars($order['customer_email']) ?></p>
+            <p class="mb-0 text-muted small"><?= htmlspecialchars($order['customer_phone'] ?? '—') ?></p>
         </div>
     </div>
-    <?php if ($order['street']): ?>
-    <div class="info-box" style="grid-column:span 2">
-        <div class="info-box-label">📍 Delivery Address</div>
-        <div class="info-box-value"><?= sanitize($order['unit_no'].' '.$order['street']) ?></div>
-        <div class="info-box-sub"><?= sanitize($order['city'].', '.$order['state'].' '.$order['postal_code'].', '.$order['country']) ?></div>
+    <div class="col-md-6">
+        <div class="card border-0 bg-light rounded-3 p-3 h-100">
+            <h6 class="fw-bold text-success mb-3"><i class="bi bi-geo-alt me-2"></i>Delivery Address</h6>
+            <p class="mb-0 small">
+                <?= htmlspecialchars($order['unit_no']) ?>,
+                <?= htmlspecialchars($order['street']) ?>,<br>
+                <?= htmlspecialchars($order['city']) ?>,
+                <?= htmlspecialchars($order['state']) ?>
+                <?= htmlspecialchars($order['postal_code']) ?>,<br>
+                <?= htmlspecialchars($order['country']) ?>
+            </p>
+        </div>
     </div>
-    <?php endif; ?>
-</div>
 
-<!-- Order Items -->
-<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">Order Items</div>
-<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:18px">
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead>
-            <tr style="background:var(--bg3)">
-                <th style="padding:10px 14px;text-align:left;color:var(--text3);font-size:11px;text-transform:uppercase">Product</th>
-                <th style="padding:10px 14px;text-align:center;color:var(--text3);font-size:11px;text-transform:uppercase">Qty</th>
-                <th style="padding:10px 14px;text-align:right;color:var(--text3);font-size:11px;text-transform:uppercase">Unit Price</th>
-                <th style="padding:10px 14px;text-align:right;color:var(--text3);font-size:11px;text-transform:uppercase">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php while ($item = $items->fetch_assoc()): ?>
-        <tr style="border-top:1px solid var(--border)">
-            <td style="padding:11px 14px">
-                <div style="display:flex;align-items:center;gap:10px">
-                    <?php if ($item['product_image']): ?>
-                    <img src="<?= sanitize($item['product_image']) ?>"
-                         style="width:38px;height:38px;border-radius:8px;object-fit:cover;border:1px solid var(--border)"
-                         onerror="this.style.display='none'" alt="">
-                    <?php else: ?>
-                    <div style="width:38px;height:38px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px">📦</div>
-                    <?php endif; ?>
-                    <span style="font-weight:600"><?= sanitize($item['name']) ?></span>
-                </div>
-            </td>
-            <td style="padding:11px 14px;text-align:center;color:var(--text2)"><?= $item['quantity'] ?></td>
-            <td style="padding:11px 14px;text-align:right"><?= formatRM($item['product_price']) ?></td>
-            <td style="padding:11px 14px;text-align:right;font-weight:700;color:var(--green)"><?= formatRM($item['quantity'] * $item['product_price']) ?></td>
-        </tr>
-        <?php endwhile; ?>
-        </tbody>
-    </table>
-</div>
+    <!-- Order Items -->
+    <div class="col-12">
+        <h6 class="fw-bold mb-2"><i class="bi bi-basket me-2"></i>Items Ordered</h6>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead class="table-light">
+                    <tr><th>Product</th><th>Unit Price</th><th>Qty</th><th class="text-end">Subtotal</th></tr>
+                </thead>
+                <tbody>
+                <?php while ($item = $items->fetch_assoc()): ?>
+                <tr>
+                    <td>
+                        <?php if ($item['product_image'] && file_exists("uploads/products/" . $item['product_image'])): ?>
+                            <img src="uploads/products/<?= $item['product_image'] ?>"
+                                 style="width:36px;height:36px;object-fit:cover;border-radius:6px" class="me-2">
+                        <?php endif; ?>
+                        <?= htmlspecialchars($item['name']) ?>
+                    </td>
+                    <td>$<?= number_format($item['product_price'], 2) ?></td>
+                    <td><?= $item['quantity'] ?></td>
+                    <td class="text-end">$<?= number_format($item['product_price'] * $item['quantity'], 2) ?></td>
+                </tr>
+                <?php endwhile; ?>
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td colspan="3" class="text-end">Total</td>
+                        <td class="text-end text-success">$<?= number_format($order['total_price'], 2) ?></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 
-<!-- Summary -->
-<div style="display:flex;justify-content:flex-end">
-    <div style="width:260px">
-        <div class="summary-row total">
-            <span>Order Total</span>
-            <span><?= formatRM($order['total_price']) ?></span>
+    <!-- Payment & Status -->
+    <div class="col-md-6">
+        <div class="card border-0 bg-light rounded-3 p-3">
+            <h6 class="fw-bold text-success mb-2"><i class="bi bi-credit-card me-2"></i>Payment</h6>
+            <p class="mb-1 small">Status:
+                <span class="badge badge-<?= $order['payment_status'] ?? 'pending' ?> px-2">
+                    <?= ucfirst($order['payment_status'] ?? 'pending') ?>
+                </span>
+            </p>
+            <?php if ($order['payment_date']): ?>
+                <p class="mb-0 small text-muted">Paid: <?= date('d M Y, h:i A', strtotime($order['payment_date'])) ?></p>
+            <?php endif; ?>
         </div>
-        <?php if ($order['paid_amount']): ?>
-        <div class="summary-row" style="color:var(--green);font-weight:600;margin-top:6px">
-            <span>Amount Paid</span>
-            <span><?= formatRM($order['paid_amount']) ?></span>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 bg-light rounded-3 p-3">
+            <h6 class="fw-bold text-success mb-2"><i class="bi bi-truck me-2"></i>Delivery</h6>
+            <span class="badge badge-<?= $order['delivery_status'] ?> px-2 py-1">
+                <?= ucfirst($order['delivery_status']) ?>
+            </span>
+            <p class="mb-0 mt-2 small text-muted">Ordered: <?= date('d M Y, h:i A', strtotime($order['order_date'])) ?></p>
         </div>
-        <?php if ($order['payment_date']): ?>
-        <div style="font-size:11px;color:var(--text3);text-align:right">
-            Paid on <?= date('d M Y', strtotime($order['payment_date'])) ?>
-        </div>
-        <?php endif; ?>
-        <?php endif; ?>
     </div>
 </div>

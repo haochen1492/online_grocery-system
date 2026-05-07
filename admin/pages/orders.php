@@ -1,196 +1,240 @@
 <?php
-require_once '../includes/auth.php';
-require_once '../includes/db.php';
-requireLogin();
-$db = getDB();
-$page_title = 'Manage Orders';
+session_start();
+require 'config/db.php';
+require 'includes/header.php';
+$pageTitle = "Manage Orders";
+
+$msg = '';
 
 // Update delivery status
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_order'])) {
-    $oid    = (int)$_POST['order_id'];
-    $status = $_POST['delivery_status'];
-    $db->query("UPDATE orders SET delivery_status='$status' WHERE order_id=$oid");
-    redirect('orders.php','Order status updated!');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
+    $orderId = (int)$_POST['order_id'];
+    $status  = $_POST['delivery_status'];
+    $allowed = ['pending', 'shipped', 'delivered'];
+    if (in_array($status, $allowed)) {
+        $stmt = $conn->prepare("UPDATE orders SET delivery_status = ? WHERE order_id = ?");
+        $stmt->bind_param("si", $status, $orderId);
+        $msg = $stmt->execute() ? ['success', 'Order status updated.'] : ['danger', 'Update failed.'];
+    }
 }
 
-// Delete
+// Delete order
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $db->query("DELETE FROM orders WHERE order_id=$id");
-    redirect('orders.php','Order deleted.','info');
+    $conn->query("DELETE FROM orders WHERE order_id = $id");
+    header("Location: orders.php?deleted=1");
+    exit;
 }
 
-// Filters
-$search      = sanitize($_GET['search'] ?? '');
-$filter_stat = $_GET['status'] ?? '';
-$filter_cust = (int)($_GET['customer'] ?? 0);
-$where = "WHERE 1";
-if ($search)      $where .= " AND (o.order_id LIKE '%$search%' OR c.customer_name LIKE '%$search%')";
-if ($filter_stat) $where .= " AND o.delivery_status='$filter_stat'";
-if ($filter_cust) $where .= " AND o.customer_id=$filter_cust";
+if (isset($_GET['deleted'])) $msg = ['success', 'Order deleted.'];
 
-$orders = $db->query("
-    SELECT o.*,
-           c.customer_name, c.customer_email, c.customer_phone,
-           a.unit_no, a.street, a.city, a.state, a.postal_code,
-           p.payment_status
+// Filters
+$search    = trim($_GET['search'] ?? '');
+$filterSt  = $_GET['status'] ?? '';
+$where     = "WHERE 1=1";
+$params    = [];
+$types     = "";
+
+if ($search) {
+    $where   .= " AND (c.customer_name LIKE ? OR o.order_id = ?)";
+    $params[] = "%$search%";
+    $params[] = (int)$search;
+    $types   .= "si";
+}
+if (in_array($filterSt, ['pending','shipped','delivered'])) {
+    $where   .= " AND o.delivery_status = ?";
+    $params[] = $filterSt;
+    $types   .= "s";
+}
+
+$sql = "
+    SELECT o.order_id, o.order_date, o.total_price, o.delivery_status,
+           c.customer_name, c.customer_email,
+           a.unit_no, a.street, a.city, a.state, a.postal_code, a.country
     FROM orders o
-    JOIN customers c  ON o.customer_id  = c.customer_id
-    LEFT JOIN addresses a ON o.address_id = a.address_id
-    LEFT JOIN payments p  ON o.order_id   = p.order_id
+    JOIN customers c ON o.customer_id = c.customer_id
+    JOIN addresses a ON o.address_id  = a.address_id
     $where
     ORDER BY o.order_date DESC
-");
-$rows  = [];
-while ($r = $orders->fetch_assoc()) $rows[] = $r;
-$total = count($rows);
-
-require_once '../includes/header.php';
+";
+$stmt = $conn->prepare($sql);
+if ($types) $stmt->bind_param($types, ...$params);
+$stmt->execute();
+$orders = $stmt->get_result();
 ?>
+<?php require 'includes/sidebar.php'; ?>
+<div id="content-wrapper">
+<?php require 'includes/topbar.php'; ?>
+<div class="p-4">
 
-<div style="margin-bottom:20px">
-    <p style="color:var(--text3);font-size:13px"><?= $total ?> orders found</p>
+<?php if ($msg): ?>
+    <div class="alert alert-<?= $msg[0] ?> alert-dismissible fade show">
+        <?= $msg[1] ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+<!-- Toolbar -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <form class="d-flex gap-2 flex-wrap" method="GET">
+        <input type="text" name="search" class="form-control form-control-sm"
+               placeholder="Search by name or order #…"
+               value="<?= htmlspecialchars($search) ?>" style="width:220px">
+        <select name="status" class="form-select form-select-sm" style="width:150px">
+            <option value="">All Statuses</option>
+            <option value="pending"   <?= $filterSt === 'pending'   ? 'selected' : '' ?>>Pending</option>
+            <option value="shipped"   <?= $filterSt === 'shipped'   ? 'selected' : '' ?>>Shipped</option>
+            <option value="delivered" <?= $filterSt === 'delivered' ? 'selected' : '' ?>>Delivered</option>
+        </select>
+        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        <a href="orders.php" class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></a>
+    </form>
 </div>
 
-<div class="card">
-    <div class="filters-row">
-        <form method="GET" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <div class="search-bar">
-                <span>🔍</span>
-                <input type="text" name="search" placeholder="Search ID or customer..." value="<?= $search ?>">
-            </div>
-            <select name="status" onchange="this.form.submit()">
-                <option value="">All Status</option>
-                <option value="pending"   <?= $filter_stat==='pending'  ?'selected':'' ?>>Pending</option>
-                <option value="shipped"   <?= $filter_stat==='shipped'  ?'selected':'' ?>>Shipped</option>
-                <option value="delivered" <?= $filter_stat==='delivered'?'selected':'' ?>>Delivered</option>
-            </select>
-            <?php if ($search || $filter_stat || $filter_cust): ?>
-            <a href="orders.php" class="btn btn-ghost btn-sm">✕ Clear</a>
-            <?php endif; ?>
-        </form>
-    </div>
-
-    <div class="table-wrap">
-        <table>
-            <thead>
+<!-- Orders Table -->
+<div class="content-card card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>#Order</th>
+                        <th>Customer</th>
+                        <th>Delivery Address</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ($orders->num_rows === 0): ?>
+                    <tr><td colspan="7" class="text-center text-muted py-4">No orders found.</td></tr>
+                <?php endif; ?>
+                <?php while ($o = $orders->fetch_assoc()): ?>
                 <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Delivery Address</th>
-                    <th>Total</th>
-                    <th>Payment</th>
-                    <th>Delivery</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <td><strong>#<?= $o['order_id'] ?></strong></td>
+                    <td>
+                        <div class="fw-semibold"><?= htmlspecialchars($o['customer_name']) ?></div>
+                        <small class="text-muted"><?= htmlspecialchars($o['customer_email']) ?></small>
+                    </td>
+                    <td>
+                        <small>
+                            <?= htmlspecialchars($o['unit_no']) ?>,
+                            <?= htmlspecialchars($o['street']) ?>,
+                            <?= htmlspecialchars($o['city']) ?>,
+                            <?= htmlspecialchars($o['state']) ?>
+                            <?= htmlspecialchars($o['postal_code']) ?>,
+                            <?= htmlspecialchars($o['country']) ?>
+                        </small>
+                    </td>
+                    <td><strong>$<?= number_format($o['total_price'], 2) ?></strong></td>
+                    <td>
+                        <span class="badge badge-<?= $o['delivery_status'] ?> px-2 py-1 rounded-pill">
+                            <?= ucfirst($o['delivery_status']) ?>
+                        </span>
+                    </td>
+                    <td class="text-muted small"><?= date('d M Y, h:i A', strtotime($o['order_date'])) ?></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-success me-1"
+                            data-bs-toggle="modal" data-bs-target="#statusModal"
+                            data-id="<?= $o['order_id'] ?>"
+                            data-status="<?= $o['delivery_status'] ?>">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info me-1"
+                            data-bs-toggle="modal" data-bs-target="#detailModal"
+                            data-id="<?= $o['order_id'] ?>">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <a href="?delete=<?= $o['order_id'] ?>" class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('Delete order #<?= $o['order_id'] ?>? This cannot be undone.')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-            <?php if (empty($rows)): ?>
-                <tr><td colspan="8"><div class="empty-state"><div class="ei">🛒</div><p>No orders found</p></div></td></tr>
-            <?php else: foreach ($rows as $o):
-                $item_cnt = $db->query("SELECT COUNT(*) c FROM order_details WHERE order_id={$o['order_id']}")->fetch_assoc()['c'];
-            ?>
-            <tr>
-                <td>
-                    <strong style="color:var(--blue)">#<?= $o['order_id'] ?></strong>
-                    <div style="font-size:11px;color:var(--text3)"><?= $item_cnt ?> item(s)</div>
-                </td>
-                <td>
-                    <div style="font-weight:600"><?= sanitize($o['customer_name']) ?></div>
-                    <div style="font-size:11px;color:var(--text3)"><?= sanitize($o['customer_phone'] ?? '') ?></div>
-                </td>
-                <td style="font-size:12px;color:var(--text2);max-width:180px">
-                    <?php if ($o['street']): ?>
-                    <?= sanitize($o['unit_no'].' '.$o['street']) ?>,<br>
-                    <?= sanitize($o['city'].', '.$o['state']) ?>
-                    <?php else: ?><span style="color:var(--text3)">—</span><?php endif; ?>
-                </td>
-                <td><strong style="color:var(--green)"><?= formatRM($o['total_price']) ?></strong></td>
-                <td>
-                    <?php $ps = $o['payment_status'] ?? 'pending'; ?>
-                    <span class="badge badge-<?= $ps ?>"><?= ucfirst($ps) ?></span>
-                </td>
-                <td><span class="badge badge-<?= $o['delivery_status'] ?>"><?= ucfirst($o['delivery_status']) ?></span></td>
-                <td style="color:var(--text3);font-size:12px"><?= date('d M Y', strtotime($o['order_date'])) ?></td>
-                <td>
-                    <div style="display:flex;gap:6px">
-                        <button class="btn btn-ghost btn-sm btn-icon" onclick="viewOrder(<?= $o['order_id'] ?>)" title="View">👁</button>
-                        <button class="btn btn-orange btn-sm btn-icon" onclick="updateOrder(<?= htmlspecialchars(json_encode($o)) ?>)" title="Update Status">✏️</button>
-                        <a href="orders.php?delete=<?= $o['order_id'] ?>"
-                           class="btn btn-danger btn-sm btn-icon"
-                           onclick="return confirm('Delete order #<?= $o['order_id'] ?>?')">🗑</a>
-                    </div>
-                </td>
-            </tr>
-            <?php endforeach; endif; ?>
-            </tbody>
-        </table>
+                <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+</div>
+</div>
 
-<!-- UPDATE STATUS MODAL -->
-<div class="modal-overlay" id="updateModal">
-    <div class="modal">
-        <div class="modal-header">
-            <span class="modal-title">Update Delivery Status</span>
-            <button class="modal-close" onclick="closeModal('updateModal')">✕</button>
-        </div>
-        <form method="POST">
-            <input type="hidden" name="update_order" value="1">
-            <input type="hidden" name="order_id" id="uo_id">
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Order</label>
-                    <input type="text" id="uo_label" disabled style="opacity:0.6">
+<!-- Update Status Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="form-group">
-                    <label>Delivery Status</label>
-                    <select name="delivery_status" id="uo_status">
+                <div class="modal-body">
+                    <input type="hidden" name="order_id" id="sm_order_id">
+                    <label class="form-label fw-semibold">Delivery Status</label>
+                    <select name="delivery_status" id="sm_status" class="form-select">
                         <option value="pending">Pending</option>
                         <option value="shipped">Shipped</option>
                         <option value="delivered">Delivered</option>
                     </select>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" onclick="closeModal('updateModal')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Update</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- VIEW ORDER MODAL -->
-<div class="modal-overlay" id="viewModal">
-    <div class="modal modal-xl">
-        <div class="modal-header">
-            <span class="modal-title" id="view_title">Order Details</span>
-            <button class="modal-close" onclick="closeModal('viewModal')">✕</button>
-        </div>
-        <div class="modal-body" id="view_body" style="min-height:200px">
-            <div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="update_status" class="btn btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Update
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
+<!-- Order Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-success" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJAX: fetch_order_details.php output lands here -->
+<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js)"></script>
 <script>
-function updateOrder(o) {
-    document.getElementById('uo_id').value     = o.order_id;
-    document.getElementById('uo_label').value  = '#' + o.order_id + ' — ' + o.customer_name;
-    document.getElementById('uo_status').value = o.delivery_status;
-    openModal('updateModal');
-}
+// Status modal
+const statusModal = document.getElementById('statusModal');
+statusModal.addEventListener('show.bs.modal', e => {
+    const btn = e.relatedTarget;
+    document.getElementById('sm_order_id').value = btn.dataset.id;
+    const sel = document.getElementById('sm_status');
+    for (let opt of sel.options) opt.selected = opt.value === btn.dataset.status;
+});
 
-function viewOrder(id) {
-    document.getElementById('view_title').textContent = 'Order #' + id;
-    document.getElementById('view_body').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div>';
-    openModal('viewModal');
-    fetch('order_detail.php?id=' + id)
+// Detail modal — AJAX load
+const detailModal = document.getElementById('detailModal');
+detailModal.addEventListener('show.bs.modal', e => {
+    const orderId = e.relatedTarget.dataset.id;
+    document.getElementById('detailBody').innerHTML =
+        '<div class="text-center py-4"><div class="spinner-border text-success" role="status"></div></div>';
+    fetch(`fetch_order_details.php?order_id=${orderId}`)
         .then(r => r.text())
-        .then(html => document.getElementById('view_body').innerHTML = html)
-        .catch(() => document.getElementById('view_body').innerHTML = '<p style="color:red;padding:20px">Failed to load order.</p>');
-}
-</script>
+        .then(html => document.getElementById('detailBody').innerHTML = html);
+});
 
-<?php require_once '../includes/footer.php'; ?>
+// Sidebar toggle
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('show');
+});
+</script>
+</body>
+</html>
+
