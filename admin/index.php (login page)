@@ -2,30 +2,26 @@
 require_once 'includes/auth.php';
 require_once 'includes/db.php';
 
-if (isLoggedIn()) {
-    header('Location: pages/dashboard.php');
-    exit;
-}
+if (isLoggedIn()) { header('Location: pages/dashboard.php'); exit; }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = sanitize($_POST['email'] ?? '');
+    $username = sanitize($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($email && $password) {
-        $db = getDB();
-        $stmt = $db->prepare("SELECT * FROM admins WHERE email = ? LIMIT 1");
-        $stmt->bind_param("s", $email);
+    if ($username && $password) {
+        $db  = getDB();
+        $stmt = $db->prepare("SELECT * FROM admin WHERE username = ? LIMIT 1");
+        $stmt->bind_param("s", $username);
         $stmt->execute();
         $admin = $stmt->get_result()->fetch_assoc();
 
         if ($admin && password_verify($password, $admin['password'])) {
-            $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_name'] = $admin['name'];
-            $_SESSION['admin_role'] = $admin['role'];
-            redirect('pages/dashboard.php', 'Welcome back, ' . $admin['name'] . '!');
+            $_SESSION['admin_id']       = $admin['admin_id'];
+            $_SESSION['admin_username'] = $admin['username'];
+            redirect('pages/dashboard.php', 'Welcome back, ' . $admin['username'] . '!');
         } else {
-            $error = 'Invalid email or password.';
+            $error = 'Invalid username or password.';
         }
     } else {
         $error = 'Please fill in all fields.';
@@ -37,199 +33,225 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login — GreenBasket</title>
+    <title>Admin Login — FreshMart</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0d1117;
-            --bg2: #161b22;
-            --bg3: #21262d;
-            --border: #30363d;
-            --green: #3fb950;
-            --green-dim: #238636;
-            --green-glow: rgba(63,185,80,0.15);
-            --text: #e6edf3;
-            --text-muted: #7d8590;
-            --red: #f85149;
+            --green:  #2d6a4f;
+            --green2: #40916c;
+            --green3: #74c69d;
+            --bg:     #f0ede6;
+            --bg2:    #ffffff;
+            --border: #ddd8cf;
+            --text:   #1a1a1a;
+            --text2:  #666;
+            --red:    #c1121f;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
             min-height: 100vh;
             display: flex;
+            background: var(--bg);
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            flex: 1;
+            background: var(--green);
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 60px;
             position: relative;
             overflow: hidden;
         }
-        body::before {
+        .left-panel::before {
             content: '';
-            position: fixed;
-            inset: 0;
-            background-image:
-                radial-gradient(circle at 20% 20%, rgba(63,185,80,0.06) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(88,166,255,0.04) 0%, transparent 50%);
-            pointer-events: none;
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 30% 70%, rgba(116,198,157,0.2) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 50%);
         }
-        .grid-bg {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
+        .left-panel .dots {
+            position: absolute; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
         }
-        .login-wrap {
-            width: 100%;
-            max-width: 420px;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
-        .login-logo {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .logo-icon {
-            width: 60px; height: 60px;
-            background: var(--green-glow);
-            border: 1px solid rgba(63,185,80,0.3);
-            border-radius: 16px;
+        .left-content { position: relative; z-index:1; text-align: center; }
+        .left-logo {
+            width: 80px; height: 80px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 22px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 28px;
-            margin: 0 auto 14px;
+            font-size: 36px;
+            margin: 0 auto 24px;
         }
-        .login-logo h1 {
-            font-family: 'Syne', sans-serif;
+        .left-content h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 40px;
             font-weight: 800;
-            font-size: 26px;
+            color: #fff;
+            margin-bottom: 14px;
+            line-height: 1.1;
+        }
+        .left-content p {
+            color: rgba(255,255,255,0.65);
+            font-size: 15px;
+            line-height: 1.7;
+            max-width: 320px;
+        }
+        .features { margin-top: 40px; display: flex; flex-direction: column; gap: 14px; }
+        .feature-item {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 12px 18px;
+            text-align: left;
+            color: rgba(255,255,255,0.85);
+            font-size: 13px; font-weight: 500;
+        }
+        .feature-item span { font-size: 20px; }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            width: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 50px;
+            background: var(--bg);
+        }
+        .login-box { width: 100%; }
+
+        .login-box h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 800;
             color: var(--text);
-        }
-        .login-logo p {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-top: 4px;
-        }
-        .login-card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 32px;
-        }
-        .login-card h2 {
-            font-family: 'Syne', sans-serif;
-            font-size: 18px;
-            font-weight: 700;
             margin-bottom: 6px;
         }
-        .login-card .subtitle {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-bottom: 28px;
+        .login-box .sub {
+            color: var(--text2);
+            font-size: 14px;
+            margin-bottom: 32px;
         }
+
         .form-group { margin-bottom: 18px; }
         label {
             display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 6px;
+            font-size: 12px; font-weight: 700;
+            color: var(--text2);
+            text-transform: uppercase; letter-spacing: 0.8px;
+            margin-bottom: 7px;
         }
-        .input-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
+        .input-wrap { position: relative; }
         .input-icon {
-            position: absolute;
-            left: 13px;
-            font-size: 15px;
-            pointer-events: none;
-            z-index: 1;
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px; pointer-events: none;
         }
         input {
             width: 100%;
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 11px 13px 11px 40px;
+            background: var(--bg2);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px 12px 44px;
             color: var(--text);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.15s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px; outline: none;
+            transition: all 0.18s;
         }
         input:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(63,185,80,0.12);
+            border-color: var(--green2);
+            box-shadow: 0 0 0 3px rgba(64,145,108,0.12);
+            background: #fff;
         }
-        input::placeholder { color: #484f58; }
+        input::placeholder { color: #bbb; }
+
         .error-msg {
-            background: rgba(248,81,73,0.1);
-            border: 1px solid rgba(248,81,73,0.3);
+            background: #fff0f0;
+            border: 1.5px solid #ffc5c5;
             color: var(--red);
-            padding: 11px 16px;
-            border-radius: 8px;
+            padding: 12px 16px;
+            border-radius: 10px;
             font-size: 13px;
             margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
         }
+
         .btn-login {
             width: 100%;
-            background: var(--green-dim);
+            background: var(--green);
             color: #fff;
-            border: 1px solid var(--green-dim);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px; font-weight: 700;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.18s;
             letter-spacing: 0.3px;
             margin-top: 6px;
+            box-shadow: 0 4px 14px rgba(45,106,79,0.3);
         }
         .btn-login:hover {
-            background: var(--green);
-            border-color: var(--green);
+            background: var(--green2);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(63,185,80,0.25);
+            box-shadow: 0 6px 20px rgba(45,106,79,0.38);
         }
-        .hint-box {
-            margin-top: 18px;
-            padding: 12px 16px;
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+
+        .hint {
+            margin-top: 20px;
+            padding: 13px 16px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
             font-size: 12px;
-            color: var(--text-muted);
+            color: var(--green);
             text-align: center;
         }
-        .hint-box strong { color: var(--green); }
-        .footer-text {
+        .hint strong { font-weight: 700; }
+
+        .footer-note {
+            margin-top: 24px;
             text-align: center;
-            color: var(--text-muted);
             font-size: 12px;
-            margin-top: 22px;
+            color: #aaa;
+        }
+
+        @media (max-width: 900px) {
+            .left-panel { display: none; }
+            .right-panel { width: 100%; }
         }
     </style>
 </head>
 <body>
-<div class="grid-bg"></div>
-<div class="login-wrap">
-    <div class="login-logo">
-        <div class="logo-icon">🥦</div>
-        <h1>GreenBasket</h1>
-        <p>Online Grocery Management System</p>
+
+<!-- LEFT -->
+<div class="left-panel">
+    <div class="dots"></div>
+    <div class="left-content">
+        <div class="left-logo">🛒</div>
+        <h1>FreshMart<br>Admin</h1>
+        <p>Manage your online grocery store with a powerful and easy-to-use dashboard.</p>
+        <div class="features">
+            <div class="feature-item"><span>📦</span> Products & Categories</div>
+            <div class="feature-item"><span>👥</span> Customer Management</div>
+            <div class="feature-item"><span>🛍️</span> Orders & Payments</div>
+            <div class="feature-item"><span>📊</span> Real-time Dashboard</div>
+        </div>
     </div>
-    <div class="login-card">
+</div>
+
+<!-- RIGHT -->
+<div class="right-panel">
+    <div class="login-box">
         <h2>Welcome back</h2>
-        <p class="subtitle">Sign in to your admin account</p>
+        <p class="sub">Sign in to your admin account to continue</p>
 
         <?php if ($error): ?>
         <div class="error-msg">⚠ <?= $error ?></div>
@@ -237,10 +259,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form method="POST">
             <div class="form-group">
-                <label>Email Address</label>
+                <label>Username</label>
                 <div class="input-wrap">
-                    <span class="input-icon">✉</span>
-                    <input type="email" name="email" placeholder="admin@grocery.com" value="<?= sanitize($_POST['email']??'') ?>" required>
+                    <span class="input-icon">👤</span>
+                    <input type="text" name="username" placeholder="Enter username"
+                           value="<?= sanitize($_POST['username'] ?? '') ?>" required autofocus>
                 </div>
             </div>
             <div class="form-group">
@@ -253,11 +276,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn-login">Sign In →</button>
         </form>
 
-        <div class="hint-box">
-            Default: <strong>admin@grocery.com</strong> / <strong>password</strong>
+        <div class="hint">
+            Default credentials: <strong>admin</strong> / <strong>admin123</strong>
         </div>
+        <p class="footer-note">© <?= date('Y') ?> FreshMart. All rights reserved.</p>
     </div>
-    <p class="footer-text">© <?= date('Y') ?> GreenBasket Admin · All rights reserved</p>
 </div>
+
 </body>
 </html>
