@@ -3,10 +3,10 @@ include '../includes/dbconnect.php';
 session_start();
 
 // Check if user is logged in
-/*if (!isset($_SESSION['customer_id'])) {
+if (!isset($_SESSION['customer_id'])) {
     header('Location: login.php');
     exit;
-}*/
+}
 
 //fetch added products
 $products = [];
