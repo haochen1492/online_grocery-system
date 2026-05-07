@@ -1,6 +1,6 @@
 <p>Infinity Grocer</p>
 <nav>
-    <a href="home_page.php">Home</a>
+    <a href="index.php">Home</a>
     <a href="products.php">Products</a>
     <a href="Contact.php">Contact</a>
     <a href="about.php">About Us</a>
