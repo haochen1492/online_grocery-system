@@ -89,3 +89,5 @@ create table cart(
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     active boolean not null default true
 )
+
+INSERT INTO admin (username, password, admin_role) VALUES ('superadmin', '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 'superadmin');
