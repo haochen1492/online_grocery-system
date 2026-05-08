@@ -6,6 +6,7 @@ CREATE TABLE admin (
     admin_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    admin_role enum('superadmin', 'admin') NOT NULL DEFAULT 'admin',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
