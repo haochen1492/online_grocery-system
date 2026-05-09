@@ -17,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customer_id = $_SESSION['customer_id']; // Assuming customer ID is stored in session
 
     // Handle credit card payment logic here (e.g., save order to database)
-    $stmt = $conn->prepare("INSERT INTO orders (customer_id, total_amount, payment_method, status) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("idss", $_SESSION['customer_id'], $total_amount, $payment_method, $status);
+    $stmt = $conn->prepare("INSERT INTO orders (customer_id, total_price, payment_method, status) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("idss", $_SESSION['customer_id'], $total_price, $payment_method, $status);
     $stmt->execute();
 
     //get the last inserted order ID
