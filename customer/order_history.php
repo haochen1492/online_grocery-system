@@ -10,7 +10,7 @@ if (!isset($_SESSION['customer_id'])) {
 $customer_id = $_SESSION['customer_id'];
 $orders = [];
 
-// 1. Fetch all orders for this customer
+// fetch all orders for this customer
 $stmt = $conn->prepare("SELECT * FROM orders WHERE customer_id = ? ORDER BY order_date DESC");
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
@@ -19,9 +19,9 @@ $result = $stmt->get_result();
 while ($order = $result->fetch_assoc()) {
     $order_id = $order['order_id'];
     
-    // 2. For each order, fetch the items by JOINING order_details and products
+    // for each order, fetch the items by joining order_details and products
     $item_stmt = $conn->prepare("
-        SELECT od.*, p.name 
+        SELECT od.*, p.name, p.product_image
         FROM order_details od 
         JOIN products p ON od.product_id = p.product_id 
         WHERE od.order_id = ?
@@ -40,6 +40,8 @@ while ($order = $result->fetch_assoc()) {
     $orders[] = $order;
     $item_stmt->close();
 }
+
+$item_stmt = $conn->prepare("SELECT od.*, p.name, p.product_image FROM order_details od JOIN products p ON od.product_id = p.product_id WHERE od.order_id = ?");
 $stmt->close();
 ?>
 <!DOCTYPE html>
@@ -81,6 +83,7 @@ $stmt->close();
                             <ul style="list-style: none; padding-left: 20px; font-size: 14px;">
                                 <?php foreach ($order['items'] as $item): ?>
                                     <li>
+                                        <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" style="width: 70px; height: 70px; margin-right: 10px;">
                                         • <?php echo htmlspecialchars($item['name']); ?> 
                                         (x<?php echo $item['quantity']; ?>) - 
                                         RM<?php echo number_format($item['product_price'], 2); ?>

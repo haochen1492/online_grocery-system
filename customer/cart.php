@@ -10,7 +10,7 @@ if (!isset($_SESSION['customer_id'])) {
 
 $customer_id = $_SESSION['customer_id'];
 
-// --- FETCH CART DATA ---
+// fetch cart data
 $products = [];
 $total = 0;
 $stmt = $conn->prepare("
@@ -28,7 +28,6 @@ while ($row = $result->fetch_assoc()) {
     $_SESSION['cart'][$row['product_id']] = $row['quantity'];
 }
 
-// --- HANDLE ACTIONS ---
 // Remove Item
 if (isset($_GET['remove'])) {
     $pid = $_GET['remove'];
@@ -40,7 +39,7 @@ if (isset($_GET['remove'])) {
     exit;
 }
 
-// Update Quantity
+// Update quantity
 if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
     $pid = $_GET['product_id'];
     $action = $_GET['update_qty'];
@@ -80,6 +79,7 @@ if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
         ?>
             <div class="cart-item">
                 <div class="item-details">
+                    <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="item-image" style="width: 100px; height: 100px; object-fit: cover; margin-right: 20px;">
                     <h4><?php echo htmlspecialchars($item['name']); ?></h4>
                     <div class="qty-controls">
                         <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=decrease" class="qty-btn">-</a>

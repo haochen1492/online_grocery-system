@@ -1,41 +1,66 @@
 <?php
 include '../includes/dbconnect.php';
 session_start();
+
 // check if user is logged in
-/*if (!isset($_SESSION['customer_id'])) {
+if (!isset($_SESSION['customer_id'])) {
     header('Location: login.php');
     exit;
-}*/
+}
 
-
+$customer_id = $_SESSION['customer_id'];
+$total_price = $_SESSION['temp_total'];
+$address_id = $_SESSION['temp_address_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        // insert into orders
+        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status) VALUES (?, ?, ?, 'pending')");
+        $stmt->bind_param("iid", $customer_id, $address_id, $total_price);
+        $stmt->execute();
+        $order_id = $conn->insert_id;
 
-    $total_amount = $_POST['total_amount'] ?? 0.00; // Calculate total amount based on cart items
-    $payment_method = 'credit_card';
-    $status = 'paid';
-    $customer_id = $_SESSION['customer_id']; // Assuming customer ID is stored in session
+        // process items, Update Stock, and insert details
+        $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity, product_price) VALUES (?, ?, ?, ?)");
+        $stmt_stock = $conn->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?");
 
-    // Handle credit card payment logic here (e.g., save order to database)
-    $stmt = $conn->prepare("INSERT INTO orders (customer_id, total_price, payment_method, status) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("idss", $_SESSION['customer_id'], $total_price, $payment_method, $status);
-    $stmt->execute();
+        foreach ($_SESSION['cart'] as $product_id => $quantity) {
+            // Fetch current price to lock it in order_details
+            $res = $conn->query("SELECT price FROM products WHERE product_id = $product_id");
+            $p_data = $res->fetch_assoc();
+            $current_price = $p_data['price'];
 
-    //get the last inserted order ID
-    $order_id = $conn->insert_id;
+            // Insert details
+            $stmt_items->bind_param("iiid", $order_id, $product_id, $quantity, $current_price);
+            $stmt_items->execute();
 
-    // Insert order items into order_details table
-    $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity) VALUES (?, ?, ?)");
-    foreach ($_SESSION['cart'] as $product_id => $quantity) {
-        $stmt_items->bind_param("iii", $order_id, $product_id, $quantity);
-        $stmt_items->execute();
+            // Update stock
+            $stmt_stock->bind_param("ii", $quantity, $product_id);
+            $stmt_stock->execute();
+        }
+
+        // deactivate cart items
+        $stmt_deact = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND active = 1");
+        $stmt_deact->bind_param("i", $customer_id);
+        $stmt_deact->execute();
+
+        // insert payment record 
+        $stmt_pay = $conn->prepare("INSERT INTO payments (order_id, price, payment_status) VALUES (?, ?, 'completed')");
+        $stmt_pay->bind_param("id", $order_id, $total_price);
+        $stmt_pay->execute();
+
+        // Clear session cart and redirect to confirmation
+        unset($_SESSION['cart']);
+        unset($_SESSION['temp_total']);
+        unset($_SESSION['temp_address_id']);
+        
+        header('Location: order_confirmation.php');
+        exit;
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo "Payment Error: " . $e->getMessage();
     }
-    // Clear the cart after payment
-    unset($_SESSION['cart']);
-    
-    // Redirect to a confirmation page or display a success message
-    header('Location: order_confirmation.php');
-    exit;
 }
 ?>
 

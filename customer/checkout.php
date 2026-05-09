@@ -2,7 +2,7 @@
 session_start();
 require '../includes/dbconnect.php';
 
-// --- 1. AJAX ADDRESS SAVER ---
+// save new address
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
     $data = json_decode(file_get_contents('php://input'), true);
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
     exit; 
 }
 
-// 1. SECURITY: Check if user is logged in
+// check if user is logged in
 if (!isset($_SESSION['customer_id'])) {
     header('Location: login.php');
     exit;
@@ -31,7 +31,7 @@ if (!isset($_SESSION['customer_id'])) {
 $customer_id = $_SESSION['customer_id'];
 $error = '';
 
-// 2. FETCH DATA FOR UI
+// fetch cart items and calculate totals
 $cart_items = [];
 $totalAmount = 0;
 
@@ -53,7 +53,7 @@ if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
 $shippingFee = 5.00; 
 $grandTotal = $totalAmount + $shippingFee;
 
-// 3. HANDLE ORDER PLACEMENT (POST)
+// handle order placement
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     if (!isset($_POST['address_id'])) {
         $error = "Please select a shipping address before placing your order.";
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             exit;
     } elseif ($payment_method === 'cash_on_delivery') {
                 
-                // 1. STOCK VALIDATION CHECK
+                // stock validation
                 foreach ($cart_items as $item) {
                     $requested_qty = $_SESSION['cart'][$item['product_id']];
                     if ($item['stock_quantity'] < $requested_qty) {
@@ -80,13 +80,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
 
                 if (empty($error)) {
                     try {
-                        // 2. CREATE ORDER
+                        // create order
                         $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status) VALUES (?, ?, ?, ?)");
                         $stmt->bind_param("iids", $customer_id, $address_id, $grandTotal, $status);
                         $stmt->execute();
                         $order_id = $conn->insert_id;
 
-                        // 3. PROCESS ITEMS & UPDATE STOCK
+                        // insert order items and update stock
                         $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity, product_price) VALUES (?, ?, ?, ?)");
                         $stmt_stock = $conn->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?");
 
@@ -102,13 +102,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                             $stmt_stock->execute();
                         }
 
-                        // 4. DEACTIVATE CART IN DATABASE (Moved inside the success block)
+                        // deactivated cart items
                         $stmt_deactivate = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND active = 1");
                         $stmt_deactivate->bind_param("i", $customer_id);
                         $stmt_deactivate->execute();
                         $stmt_deactivate->close();
 
-                        // 5. CLEAR SESSION AND REDIRECT
+                        // clear session cart and redirect
                         unset($_SESSION['cart']);
                         header('Location: order_confirmation.php');
                         exit;
@@ -151,6 +151,7 @@ $address_result = $stmt_addr->get_result();
             <div class="cart-preview">
                 <?php foreach ($cart_items as $item): ?>
                     <div class="cart-preview-item">
+                        <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="preview-image" style="width: 80px; height: 80px; object-fit: cover; margin-right: 20px;">
                         <span><?php echo htmlspecialchars($item['name']); ?> (x<?php echo $_SESSION['cart'][$item['product_id']]; ?>)</span>
                         <span>RM<?php echo number_format($item['price'] * $_SESSION['cart'][$item['product_id']], 2); ?></span>
                     </div>
