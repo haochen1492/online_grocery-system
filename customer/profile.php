@@ -8,7 +8,11 @@ if (!isset($_SESSION['customer_id'])) {
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+<<<<<<< HEAD
+$user_id = $_SESSION['customer_id'];
+=======
+$customer_id = $_SESSION['customer_id'];
+>>>>>>> 88bfdc68fceb1ff6f40b6040203cd17022cd0209
 $message = "";
 $message_type = "alert-success"; // Default to success style
 
@@ -18,8 +22,13 @@ if (isset($_POST['update_profile'])) {
     $phone = $_POST['phone'];
     
     $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_phone = ? WHERE customer_id = ?");
-    if ($stmt->execute([$name, $phone, $user_id])) {
+<<<<<<< HEAD
+    $stmt->bind_param("ssi", $name, $phone, $user_id);
+    if ($stmt->execute()) {
+=======
+    if ($stmt->execute([$name, $phone, $customer_id])) {
         $_SESSION['username'] = $name; // Update session name for header display
+>>>>>>> 88bfdc68fceb1ff6f40b6040203cd17022cd0209
         $message = "Profile updated successfully!";
     } else {
         $message = "Error updating profile.";
@@ -35,8 +44,15 @@ if (isset($_POST['change_password'])) {
 
     // Fetch current hashed password from DB
     $stmt = $conn->prepare("SELECT customer_password FROM customers WHERE customer_id = ?");
-    $stmt->execute([$user_id]);
+<<<<<<< HEAD
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+=======
+    $stmt->execute([$customer_id]);
     $user = $stmt->fetch();
+>>>>>>> 88bfdc68fceb1ff6f40b6040203cd17022cd0209
 
     // Verify current password first
     if (password_verify($old_pass, $user['customer_password'])) {
@@ -44,7 +60,12 @@ if (isset($_POST['change_password'])) {
         if ($new_pass === $confirm_pass) {
             $hashed_new = password_hash($new_pass, PASSWORD_DEFAULT);
             $update = $conn->prepare("UPDATE customers SET customer_password = ? WHERE customer_id = ?");
-            $update->execute([$hashed_new, $user_id]);
+<<<<<<< HEAD
+            $update->bind_param("si", $hashed_new, $user_id);
+            $update->execute();
+=======
+            $update->execute([$hashed_new, $customer_id]);
+>>>>>>> 88bfdc68fceb1ff6f40b6040203cd17022cd0209
             $message = "Password changed successfully!";
         } else {
             $message = "New passwords do not match!";
@@ -56,10 +77,52 @@ if (isset($_POST['change_password'])) {
     }
 }
 
+<<<<<<< HEAD
+// 3. HANDLE ADDRESS UPDATE
+if (isset($_POST['update_address'])) {
+    $unit = $_POST['unit_no'];
+    $street = $_POST['street'];
+    $city = $_POST['city'];
+    $postcode = $_POST['postal_code'];
+    $state = $_POST['state'];
+    $country = $_POST['country'];
+
+    // Check if an address already exists for this user
+    $check_addr = $conn->prepare("SELECT address_id FROM addresses WHERE customer_id = ?");
+    $check_addr->bind_param("i", $user_id);
+    $check_addr->execute();
+    $addr_exists = $check_addr->get_result()->num_rows > 0;
+
+    if ($addr_exists) {
+        $sql = "UPDATE addresses SET unit_no=?, street=?, city=?, state=?, postal_code=?, country=? WHERE customer_id=?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssssssi", $unit, $street, $city, $state, $postcode, $country, $user_id);
+    } else {
+        $sql = "INSERT INTO addresses (customer_id, unit_no, street, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("issssss", $user_id, $unit, $street, $city, $state, $postcode, $country);
+    }
+
+    if ($stmt->execute()) {
+        $message = "Delivery address updated successfully!";
+    }
+}
+
+// 4. FETCH LATEST DATA FOR DISPLAY
+$query = "SELECT c.*, a.unit_no, a.street, a.city, a.state, a.postal_code, a.country 
+          FROM customers c 
+          LEFT JOIN addresses a ON c.customer_id = a.customer_id 
+          WHERE c.customer_id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$current_data = $stmt->get_result()->fetch_assoc();
+=======
 // 3. FETCH CURRENT DATA FOR THE FORM
 $stmt = $conn->prepare("SELECT * FROM customers WHERE customer_id = ?");
-$stmt->execute([$user_id]);
+$stmt->execute([$customer_id]);
 $current_user = $stmt->fetch();
+>>>>>>> 88bfdc68fceb1ff6f40b6040203cd17022cd0209
 ?>
 
 <!DOCTYPE html>
