@@ -1,102 +1,53 @@
 <?php
-include '../includes/dbconnect.php';
-session_start();
-
-// Fetch 4 products for the 'Featured' section
-$featured_query = "SELECT * FROM products LIMIT 4";
-$featured_result = $conn->query($featured_query);
-?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infinity Grocer - Home</title>
-    <link rel="stylesheet" href="includes/styles.css">
-    <style>
-    .slideshow-container {
-        max-width: 100%;
-        position: relative;
-        margin: auto;
-        height: 450px; /* Adjust this height to fit your design */
-        overflow: hidden;
-    }
-
-    .mySlides img {
-        width: 100%;
-        height: 450px; 
-        object-fit: cover; /* This is critical: it crops the image to fit without stretching */
-    }
-
-    /* Animation for smooth transition */
-    .fade {
-        animation-name: fade;
-        animation-duration: 1.5s;
-    }
-
-    @keyframes fade {
-        from {opacity: .4} 
-        to {opacity: 1}
-    }
-    </style>
-</head>
-<body>
-
-<?php include 'includes/header.php'; ?>
-
-<div class="slideshow-container">
-    <div class="mySlides fade">
-        <img src="image/banner_1.jpg" style="width:100%">
-    </div>
-
-    <div class="mySlides fade">
-        <img src="image/banner_6.jpg" style="width:100%">
-    </div>
-
-    <div class="mySlides fade">
-        <img src="image/banner_3.jpg" style="width:100%">
-    </div>
-
-    <div class="mySlides fade">
-        <img src="image/banner_4.jpg" style="width:100%">
-    </div>
-
-    <div class="mySlides fade">
-        <img src="image/banner_5.webp" style="width:100%">
-    </div>
-
-    <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
-    <a class="next" onclick="plusSlides(1)">&#10095;</a>
-</div>
-
-<h2 style="text-align:center; margin-top:30px;">Featured Products</h2>
-<div class="product-grid">
-    <?php while($row = $featured_result->fetch_assoc()): ?>
-        <div class="card">
-            <img src="images/<?php echo $row['product_image']; ?>" style="width:100%; height:150px; object-fit:contain;">
-            <h4><?php echo $row['name']; ?></h4>
-            <p>RM <?php echo number_format($row['price'], 2); ?></p>
-            <a href="product.php" class="btn">View Items</a>
-        </div>
-    <?php endwhile; ?>
-</div>
-
-<script>
-let slideIndex = 1;
-showSlides(slideIndex);
-
-function plusSlides(n) { showSlides(slideIndex += n); }
-
-function showSlides(n) {
-  let slides = document.getElementsByClassName("mySlides");
-  if (n > slides.length) {slideIndex = 1}    
-  if (n < 1) {slideIndex = slides.length}
-  for (let i = 0; i < slides.length; i++) { slides[i].style.display = "none"; }
-  slides[slideIndex-1].style.display = "block";  
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
-// Auto change every 5 seconds
-setInterval(() => { plusSlides(1); }, 5000);
-</script>
-</body>
-</html>
+?>
+<style>
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 5%;
+        background-color: #fff;
+        border-bottom: 2px solid #329b18;
+        font-family: Arial, sans-serif;
+    }
+    .nav-links a {
+        text-decoration: none;
+        color: #333;
+        margin-left: 20px;
+        font-weight: 500;
+    }
+    .nav-links a:hover { color: #329b18; }
+    .auth-btn {
+        background: #329b18;
+        color: white !important;
+        padding: 8px 15px;
+        border-radius: 5px;
+    }
+</style>
+
+<div class="header-container">
+    <p style="font-weight: bold; font-size: 1.5em; color: #329b18; margin: 0;">Infinity Grocer</p>
+    
+    <nav class="nav-links">
+        <a href="index.php">Home</a>
+        <a href="products.php">Products</a>
+        <a href="Contact.php">Contact</a>
+        <a href="about.php">About Us</a>
+        <a href="cart.php">Cart</a> 
+
+        <?php if (isset($_SESSION['customer_id'])): ?>
+            <a href="orders.php">📦 Orders</a>
+            <a href="profile.php">👤 Profile</a>
+            <a href="logout.php" style="color: #d9534f;">Logout</a>
+        <?php else: ?>
+            <?php if (basename($_SERVER['PHP_SELF']) == 'login.php'): ?>
+                <a href="register.php" class="auth-btn">Register</a>
+            <?php else: ?>
+                <a href="login.php" class="auth-btn">Login</a>
+            <?php endif; ?>
+        <?php endif; ?>
+    </nav>
+</div>
