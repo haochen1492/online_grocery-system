@@ -62,7 +62,7 @@ $featured_result = $conn->query($featured_query);
 </head>
 <body>
 
-<?php include 'header.php'; ?>
+<?php include 'includes/header.php'; ?>
 
 <div class="slideshow-container">
     <div class="mySlides fade"><img src="images/banner_1.jpg"></div>
