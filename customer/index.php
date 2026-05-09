@@ -15,15 +15,30 @@ $featured_result = $conn->query($featured_query);
     <title>Infinity Grocer - Home</title>
     <link rel="stylesheet" href="includes/styles.css">
     <style>
-        /* Slideshow Container */
-        .slideshow-container { max-width: 1000px; position: relative; margin: auto; height: 400px; overflow: hidden; }
-        .mySlides { display: none; height: 100%; }
-        .mySlides img { width: 100%; height: 100%; object-fit: cover; }
-        .prev, .next { cursor: pointer; position: absolute; top: 50%; padding: 16px; color: white; font-weight: bold; background: rgba(0,0,0,0.3); border-radius: 3px; }
-        .next { right: 0; }
-        
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
-        .card { border: 1px solid #ddd; padding: 15px; text-align: center; border-radius: 8px; }
+    .slideshow-container {
+        max-width: 100%;
+        position: relative;
+        margin: auto;
+        height: 450px; /* Adjust this height to fit your design */
+        overflow: hidden;
+    }
+
+    .mySlides img {
+        width: 100%;
+        height: 450px; 
+        object-fit: cover; /* This is critical: it crops the image to fit without stretching */
+    }
+
+    /* Animation for smooth transition */
+    .fade {
+        animation-name: fade;
+        animation-duration: 1.5s;
+    }
+
+    @keyframes fade {
+        from {opacity: .4} 
+        to {opacity: 1}
+    }
     </style>
 </head>
 <body>
@@ -31,10 +46,25 @@ $featured_result = $conn->query($featured_query);
 <?php include 'includes/header.php'; ?>
 
 <div class="slideshow-container">
-    <div class="mySlides fade"><img src="images/banner1.jpg"></div>
-    <div class="mySlides fade"><img src="images/banner2.jpg"></div>
-    <div class="mySlides fade"><img src="images/banner3.jpg"></div>
-    <div class="mySlides fade"><img src="images/banner4.jpg"></div>
+    <div class="mySlides fade">
+        <img src="image/banner_1.jpg" style="width:100%">
+    </div>
+
+    <div class="mySlides fade">
+        <img src="image/banner_6.jpg" style="width:100%">
+    </div>
+
+    <div class="mySlides fade">
+        <img src="image/banner_3.jpg" style="width:100%">
+    </div>
+
+    <div class="mySlides fade">
+        <img src="image/banner_4.jpg" style="width:100%">
+    </div>
+
+    <div class="mySlides fade">
+        <img src="image/banner_5.webp" style="width:100%">
+    </div>
 
     <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
     <a class="next" onclick="plusSlides(1)">&#10095;</a>
