@@ -79,6 +79,7 @@ if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
         ?>
             <div class="cart-item">
                 <div class="item-details">
+                    <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="item-image" style="width: 100px; height: 100px; object-fit: cover; margin-right: 20px;">
                     <h4><?php echo htmlspecialchars($item['name']); ?></h4>
                     <div class="qty-controls">
                         <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=decrease" class="qty-btn">-</a>

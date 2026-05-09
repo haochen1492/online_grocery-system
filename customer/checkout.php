@@ -151,6 +151,7 @@ $address_result = $stmt_addr->get_result();
             <div class="cart-preview">
                 <?php foreach ($cart_items as $item): ?>
                     <div class="cart-preview-item">
+                        <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="preview-image" style="width: 80px; height: 80px; object-fit: cover; margin-right: 20px;">
                         <span><?php echo htmlspecialchars($item['name']); ?> (x<?php echo $_SESSION['cart'][$item['product_id']]; ?>)</span>
                         <span>RM<?php echo number_format($item['price'] * $_SESSION['cart'][$item['product_id']], 2); ?></span>
                     </div>
