@@ -1,172 +1,238 @@
 <?php
-session_start();
-require 'config/db.php';
-require 'includes/header.php';
-$pageTitle = "Dashboard";
+require_once '../includes/auth.php';
+require_once '../includes/db.php';
+requireLogin();
+$db = getDB();
+$page_title = 'Dashboard';
 
-// Stats
-$totalCustomers  = $conn->query("SELECT COUNT(*) AS c FROM customers")->fetch_assoc()['c'];
-$totalProducts   = $conn->query("SELECT COUNT(*) AS c FROM products")->fetch_assoc()['c'];
-$totalOrders     = $conn->query("SELECT COUNT(*) AS c FROM orders")->fetch_assoc()['c'];
-$totalRevenue    = $conn->query("SELECT COALESCE(SUM(total_price),0) AS r FROM orders WHERE delivery_status='delivered'")->fetch_assoc()['r'];
+// ── Stats ──
+$s_orders    = $db->query("SELECT COUNT(*) c FROM orders")->fetch_assoc()['c'];
+$s_revenue   = $db->query("SELECT COALESCE(SUM(total_price),0) t FROM orders")->fetch_assoc()['t'];
+$s_customers = $db->query("SELECT COUNT(*) c FROM customers")->fetch_assoc()['c'];
+$s_products  = $db->query("SELECT COUNT(*) c FROM products")->fetch_assoc()['c'];
+$s_pending   = $db->query("SELECT COUNT(*) c FROM orders WHERE delivery_status='pending'")->fetch_assoc()['c'];
+$s_delivered = $db->query("SELECT COUNT(*) c FROM orders WHERE delivery_status='delivered'")->fetch_assoc()['c'];
+$s_paid      = $db->query("SELECT COALESCE(SUM(price),0) t FROM payments WHERE payment_status='completed'")->fetch_assoc()['t'];
+$s_admins    = $db->query("SELECT COUNT(*) c FROM admin")->fetch_assoc()['c'];
 
-$pendingOrders   = $conn->query("SELECT COUNT(*) AS c FROM orders WHERE delivery_status='pending'")->fetch_assoc()['c'];
-$shippedOrders   = $conn->query("SELECT COUNT(*) AS c FROM orders WHERE delivery_status='shipped'")->fetch_assoc()['c'];
-
-// Recent orders
-$recentOrders = $conn->query("
-    SELECT o.order_id, c.customer_name, o.total_price, o.delivery_status, o.order_date
+// ── Recent orders ──
+$recent_orders = $db->query("
+    SELECT o.order_id, o.order_date, o.total_price, o.delivery_status,
+           c.customer_name
     FROM orders o
     JOIN customers c ON o.customer_id = c.customer_id
-    ORDER BY o.order_date DESC
-    LIMIT 8
+    ORDER BY o.order_date DESC LIMIT 6
 ");
 
-// Low stock
-$lowStock = $conn->query("SELECT name, stock_quantity FROM products WHERE stock_quantity <= 10 ORDER BY stock_quantity ASC LIMIT 5");
+// ── Top products by sales ──
+$top_products = $db->query("
+    SELECT p.name, p.product_image, SUM(od.quantity) total_sold
+    FROM order_details od
+    JOIN products p ON od.product_id = p.product_id
+    GROUP BY od.product_id ORDER BY total_sold DESC LIMIT 5
+");
+
+// ── Low stock ──
+$low_stock = $db->query("
+    SELECT p.name, p.stock_quantity, p.product_image, c.category_name
+    FROM products p
+    JOIN categories c ON p.category_id = c.category_id
+    WHERE p.stock_quantity <= 15 ORDER BY p.stock_quantity ASC LIMIT 6
+");
+
+// ── Status counts for progress ──
+$status_data = $db->query("SELECT delivery_status, COUNT(*) cnt FROM orders GROUP BY delivery_status");
+$sm = [];
+while ($r = $status_data->fetch_assoc()) $sm[$r['delivery_status']] = $r['cnt'];
+
+require_once '../includes/header.php';
 ?>
-<?php require 'includes/sidebar.php'; ?>
-<div id="content-wrapper">
-<?php require 'includes/topbar.php'; ?>
-<div class="p-4">
 
-    <!-- Stat Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card h-100" style="background: linear-gradient(135deg,#2ecc71,#27ae60)">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-white-50 small mb-1">Total Revenue</div>
-                        <div class="stat-value">$<?= number_format($totalRevenue, 2) ?></div>
-                    </div>
-                    <i class="bi bi-currency-dollar stat-icon"></i>
-                </div>
-            </div>
+<!-- STAT CARDS -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="sc-top">
+            <div class="sc-icon g">💰</div>
+            <span class="sc-tag up">Revenue</span>
         </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card h-100" style="background: linear-gradient(135deg,#3498db,#2980b9)">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-white-50 small mb-1">Total Orders</div>
-                        <div class="stat-value"><?= $totalOrders ?></div>
-                    </div>
-                    <i class="bi bi-cart3 stat-icon"></i>
-                </div>
-            </div>
+        <div class="sc-value" style="color:var(--green)"><?= formatRM($s_revenue) ?></div>
+        <div class="sc-label">Total Sales</div>
+    </div>
+    <div class="stat-card">
+        <div class="sc-top">
+            <div class="sc-icon o">🛍️</div>
+            <span class="sc-tag neu"><?= $s_pending ?> pending</span>
         </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card h-100" style="background: linear-gradient(135deg,#9b59b6,#8e44ad)">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-white-50 small mb-1">Customers</div>
-                        <div class="stat-value"><?= $totalCustomers ?></div>
-                    </div>
-                    <i class="bi bi-people stat-icon"></i>
-                </div>
-            </div>
+        <div class="sc-value"><?= number_format($s_orders) ?></div>
+        <div class="sc-label">Total Orders</div>
+    </div>
+    <div class="stat-card">
+        <div class="sc-top">
+            <div class="sc-icon b">👥</div>
+            <span class="sc-tag up">Registered</span>
         </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card h-100" style="background: linear-gradient(135deg,#e67e22,#d35400)">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-white-50 small mb-1">Products</div>
-                        <div class="stat-value"><?= $totalProducts ?></div>
-                    </div>
-                    <i class="bi bi-box-seam stat-icon"></i>
-                </div>
-            </div>
+        <div class="sc-value"><?= number_format($s_customers) ?></div>
+        <div class="sc-label">Customers</div>
+    </div>
+    <div class="stat-card">
+        <div class="sc-top">
+            <div class="sc-icon r">📦</div>
+            <span class="sc-tag neu">In catalog</span>
+        </div>
+        <div class="sc-value"><?= number_format($s_products) ?></div>
+        <div class="sc-label">Products</div>
+    </div>
+</div>
+
+<!-- RECENT ORDERS + ORDER STATUS -->
+<div style="display:grid;grid-template-columns:1fr 310px;gap:20px;margin-bottom:22px">
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">🛒 Recent Orders</span>
+            <a href="orders.php" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th><th>Customer</th>
+                        <th>Amount</th><th>Status</th><th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php while ($o = $recent_orders->fetch_assoc()): ?>
+                <tr>
+                    <td><strong style="color:var(--blue)">#<?= $o['order_id'] ?></strong></td>
+                    <td style="font-weight:600"><?= sanitize($o['customer_name']) ?></td>
+                    <td><strong style="color:var(--green)"><?= formatRM($o['total_price']) ?></strong></td>
+                    <td><span class="badge badge-<?= $o['delivery_status'] ?>"><?= ucfirst($o['delivery_status']) ?></span></td>
+                    <td style="color:var(--text3);font-size:12px"><?= date('d M Y', strtotime($o['order_date'])) ?></td>
+                </tr>
+                <?php endwhile; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Order Status Summary -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="content-card card p-3 text-center border-start border-warning border-4">
-                <div class="text-warning fw-bold fs-4"><?= $pendingOrders ?></div>
-                <div class="text-muted small">Pending Orders</div>
+    <!-- Order Status -->
+    <div class="card">
+        <div class="card-header"><span class="card-title">📊 Order Status</span></div>
+        <div class="card-body">
+            <?php
+            $statuses = [
+                'pending'   => ['🟡','#f59e0b','var(--yellow-bg)'],
+                'shipped'   => ['🚚','#1a6fa8','var(--blue-bg)'],
+                'delivered' => ['✅','#1e6641','var(--green-bg)'],
+            ];
+            foreach ($statuses as $s => [$dot, $color, $bg]):
+                $cnt = $sm[$s] ?? 0;
+                $pct = $s_orders > 0 ? round($cnt/$s_orders*100) : 0;
+            ?>
+            <div style="margin-bottom:18px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:13px;font-weight:600"><?= $dot ?> <?= ucfirst($s) ?></span>
+                    <span style="font-size:13px;color:var(--text3);font-weight:600"><?= $cnt ?></span>
+                </div>
+                <div class="status-bar">
+                    <div class="status-bar-fill" style="width:<?= $pct ?>%;background:<?= $color ?>"></div>
+                </div>
+                <div style="font-size:11px;color:var(--text3);text-align:right;margin-top:3px"><?= $pct ?>%</div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="content-card card p-3 text-center border-start border-primary border-4">
-                <div class="text-primary fw-bold fs-4"><?= $shippedOrders ?></div>
-                <div class="text-muted small">Shipped Orders</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="content-card card p-3 text-center border-start border-success border-4">
-                <div class="text-success fw-bold fs-4"><?= $totalOrders - $pendingOrders - $shippedOrders ?></div>
-                <div class="text-muted small">Delivered Orders</div>
-            </div>
-        </div>
-    </div>
+            <?php endforeach; ?>
 
-    <div class="row g-4">
-        <!-- Recent Orders -->
-        <div class="col-lg-8">
-            <div class="content-card card">
-                <div class="card-header bg-white border-0 pt-3 pb-0 px-4">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-success"></i>Recent Orders</h6>
-                </div>
-                <div class="card-body px-4">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>#Order</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            <?php while ($row = $recentOrders->fetch_assoc()): ?>
-                                <tr>
-                                    <td><strong>#<?= $row['order_id'] ?></strong></td>
-                                    <td><?= htmlspecialchars($row['customer_name']) ?></td>
-                                    <td>$<?= number_format($row['total_price'], 2) ?></td>
-                                    <td>
-                                        <span class="badge badge-<?= $row['delivery_status'] ?> px-2 py-1 rounded-pill">
-                                            <?= ucfirst($row['delivery_status']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-muted small"><?= date('d M Y', strtotime($row['order_date'])) ?></td>
-                                </tr>
-                            <?php endwhile; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Low Stock Alert -->
-        <div class="col-lg-4">
-            <div class="content-card card">
-                <div class="card-header bg-white border-0 pt-3 pb-0 px-4">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Low Stock Alert</h6>
-                </div>
-                <div class="card-body px-4">
-                    <?php if ($lowStock->num_rows === 0): ?>
-                        <p class="text-muted small">All products are well stocked.</p>
-                    <?php else: ?>
-                        <ul class="list-group list-group-flush">
-                        <?php while ($p = $lowStock->fetch_assoc()): ?>
-                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                <span class="small"><?= htmlspecialchars($p['name']) ?></span>
-                                <span class="badge bg-danger rounded-pill"><?= $p['stock_quantity'] ?> left</span>
-                            </li>
-                        <?php endwhile; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
+            <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:8px">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px">Collected Payments</div>
+                <div style="font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--green)"><?= formatRM($s_paid) ?></div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- LOW STOCK + TOP PRODUCTS -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <!-- Low Stock -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">⚠️ Low Stock</span>
+            <a href="products.php" class="btn btn-ghost btn-sm">Manage</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Product</th><th>Category</th><th>Qty</th></tr></thead>
+                <tbody>
+                <?php
+                $any = false;
+                while ($p = $low_stock->fetch_assoc()):
+                    $any = true;
+                ?>
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:9px">
+                            <?php if ($p['product_image']): ?>
+                            <img src="<?= sanitize($p['product_image']) ?>" class="p-thumb"
+                                 onerror="this.style.display='none'" alt="">
+                            <?php else: ?><div class="p-thumb-ph">📦</div><?php endif; ?>
+                            <span style="font-weight:600;font-size:13px"><?= sanitize($p['name']) ?></span>
+                        </div>
+                    </td>
+                    <td style="color:var(--text3);font-size:12px"><?= sanitize($p['category_name']) ?></td>
+                    <td>
+                        <span style="font-weight:800;color:<?= $p['stock_quantity']<=5?'var(--red)':'var(--orange)' ?>">
+                            <?= $p['stock_quantity'] ?>
+                        </span>
+                    </td>
+                </tr>
+                <?php endwhile;
+                if (!$any): ?>
+                <tr><td colspan="3" style="text-align:center;padding:30px;color:var(--text3)">✅ All products well stocked</td></tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">🏆 Top Selling Products</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Product</th><th>Units Sold</th></tr></thead>
+                <tbody>
+                <?php
+                $any2 = false;
+                $rank = 1;
+                while ($p = $top_products->fetch_assoc()):
+                    $any2 = true;
+                    $medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+                ?>
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:9px">
+                            <?php if ($p['product_image']): ?>
+                            <img src="<?= sanitize($p['product_image']) ?>" class="p-thumb"
+                                 onerror="this.style.display='none'" alt="">
+                            <?php else: ?><div class="p-thumb-ph">📦</div><?php endif; ?>
+                            <div>
+                                <div style="font-size:10px;margin-bottom:2px"><?= $medals[$rank-1] ?? '#'.$rank ?></div>
+                                <div style="font-weight:600;font-size:13px"><?= sanitize($p['name']) ?></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="color:var(--blue);font-size:15px"><?= $p['total_sold'] ?></strong>
+                        <span style="font-size:11px;color:var(--text3)"> units</span>
+                    </td>
+                </tr>
+                <?php $rank++; endwhile;
+                if (!$any2): ?>
+                <tr><td colspan="2" style="text-align:center;padding:30px;color:var(--text3)">No sales data yet</td></tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-</div>
-<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js)"></script>
-<script>
-document.getElementById('sidebarToggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('show');
-});
-</script>
-</body>
-</html>
+
+<?php require_once '../includes/footer.php'; ?>

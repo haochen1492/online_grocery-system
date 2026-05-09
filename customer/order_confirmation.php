@@ -2,10 +2,13 @@
 session_start();
 require '../includes/dbconnect.php';
 /*Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['customer_id'])) {
     header('Location: login.php');
     exit;
 }*/
+
+// Clear the cart after order confirmation
+unset($_SESSION['cart']);
 
 ?>
 <!DOCTYPE html>

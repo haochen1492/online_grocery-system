@@ -1,148 +1,162 @@
 <?php
-session_start();
-require 'config/db.php';
-require 'includes/header.php';
-$pageTitle = "Manage Categories";
+require_once '../includes/auth.php';
+require_once '../includes/db.php';
+requireLogin();
+$db = getDB();
+$page_title = 'Categories';
 
-$msg = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $name   = sanitize($_POST['category_name'] ?? '');
+    if (!$name) redirect('categories.php', 'Category name is required.', 'error');
 
-// Add
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_category'])) {
-    $name = trim($_POST['category_name']);
-    if ($name !== '') {
-        $stmt = $conn->prepare("INSERT INTO categories (category_name) VALUES (?)");
+    if ($action === 'add') {
+        $stmt = $db->prepare("INSERT INTO categories (category_name) VALUES (?)");
         $stmt->bind_param("s", $name);
-        if ($stmt->execute()) $msg = ['success', 'Category added successfully.'];
-        else $msg = ['danger', 'Category already exists or error occurred.'];
+        if ($stmt->execute()) redirect('categories.php', "Category '$name' added!");
+        else redirect('categories.php', 'Category already exists.', 'error');
+    } elseif ($action === 'edit') {
+        $id = (int)$_POST['category_id'];
+        $stmt = $db->prepare("UPDATE categories SET category_name=? WHERE category_id=?");
+        $stmt->bind_param("si", $name, $id);
+        $stmt->execute();
+        redirect('categories.php', 'Category updated!');
     }
 }
 
-// Delete
 if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
-    $conn->query("DELETE FROM categories WHERE category_id = $id");
-    header("Location: categories.php?deleted=1");
-    exit;
+    $id   = (int)$_GET['delete'];
+    $used = $db->query("SELECT COUNT(*) c FROM products WHERE category_id=$id")->fetch_assoc()['c'];
+    if ($used > 0) redirect('categories.php', "Cannot delete: $used product(s) use this category.", 'error');
+    $db->query("DELETE FROM categories WHERE category_id=$id");
+    redirect('categories.php', 'Category deleted.', 'info');
 }
 
-// Edit
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_category'])) {
-    $id   = (int)$_POST['category_id'];
-    $name = trim($_POST['category_name_edit']);
-    $stmt = $conn->prepare("UPDATE categories SET category_name=? WHERE category_id=?");
-    $stmt->bind_param("si", $name, $id);
-    if ($stmt->execute()) $msg = ['success', 'Category updated.'];
-    else $msg = ['danger', 'Update failed.'];
-}
+$search = sanitize($_GET['search'] ?? '');
+$where  = $search ? "WHERE c.category_name LIKE '%$search%'" : '';
+$result = $db->query("
+    SELECT c.*, COUNT(p.product_id) pcount
+    FROM categories c LEFT JOIN products p ON c.category_id = p.category_id
+    $where GROUP BY c.category_id ORDER BY c.category_name
+");
+$rows = [];
+while ($r = $result->fetch_assoc()) $rows[] = $r;
 
-if (isset($_GET['deleted'])) $msg = ['success', 'Category deleted.'];
-
-$categories = $conn->query("SELECT * FROM categories ORDER BY category_id DESC");
+require_once '../includes/header.php';
 ?>
-<?php require 'includes/sidebar.php'; ?>
-<div id="content-wrapper">
-<?php require 'includes/topbar.php'; ?>
-<div class="p-4">
 
-<?php if ($msg): ?>
-    <div class="alert alert-<?= $msg[0] ?> alert-dismissible fade show">
-        <?= $msg[1] ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="page-head">
+    <div>
+        <h2>Categories</h2>
+        <p>Manage product categories — Task 2</p>
     </div>
-<?php endif; ?>
+    <button class="btn btn-primary" onclick="openModal('addModal')">＋ Add Category</button>
+</div>
 
-<div class="row g-4">
-    <!-- Add Category -->
-    <div class="col-md-4">
-        <div class="content-card card p-4">
-            <h6 class="fw-bold mb-3"><i class="bi bi-plus-circle text-success me-2"></i>Add Category</h6>
-            <form method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Category Name</label>
-                    <input type="text" name="category_name" class="form-control" placeholder="e.g. Fruits & Vegetables" required>
-                </div>
-                <button type="submit" name="add_category" class="btn btn-success w-100">
-                    <i class="bi bi-plus-lg me-1"></i>Add Category
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Category List -->
-    <div class="col-md-8">
-        <div class="content-card card">
-            <div class="card-header bg-white border-0 pt-3 pb-0 px-4">
-                <h6 class="fw-bold"><i class="bi bi-tags text-success me-2"></i>All Categories</h6>
+<div class="card">
+    <div class="filters-row">
+        <form method="GET" style="display:flex;gap:10px;align-items:center">
+            <div class="search-bar">
+                <span class="si">🔍</span>
+                <input type="text" name="search" placeholder="Search categories..." value="<?= $search ?>">
             </div>
-            <div class="card-body px-4">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead><tr><th>#</th><th>Category Name</th><th>Actions</th></tr></thead>
-                        <tbody>
-                        <?php while ($cat = $categories->fetch_assoc()): ?>
-                        <tr>
-                            <td><?= $cat['category_id'] ?></td>
-                            <td><?= htmlspecialchars($cat['category_name']) ?></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary me-1"
-                                    data-bs-toggle="modal" data-bs-target="#editModal"
-                                    data-id="<?= $cat['category_id'] ?>"
-                                    data-name="<?= htmlspecialchars($cat['category_name']) ?>">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <a href="?delete=<?= $cat['category_id'] ?>"
-                                   class="btn btn-sm btn-outline-danger"
-                                   onclick="return confirm('Delete this category?')">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+            <?php if ($search): ?><a href="categories.php" class="btn btn-ghost btn-sm">✕ Clear</a><?php endif; ?>
+        </form>
+        <span style="margin-left:auto;font-size:13px;color:var(--text3)"><?= count($rows) ?> categories</span>
     </div>
-</div>
-</div>
-</div>
-
-<!-- Edit Modal -->
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Category</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="category_id" id="edit_cat_id">
-                    <div class="mb-3">
-                        <label class="form-label">Category Name</label>
-                        <input type="text" name="category_name_edit" id="edit_cat_name" class="form-control" required>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Category Name</th><th>Products</th><th>Actions</th></tr></thead>
+            <tbody>
+            <?php if (empty($rows)): ?>
+                <tr><td colspan="4"><div class="empty-state"><div class="ei">🏷️</div><p>No categories yet</p></div></td></tr>
+            <?php else: $i=1; foreach ($rows as $c): ?>
+            <tr>
+                <td style="color:var(--text3)"><?= $i++ ?></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:11px">
+                        <div style="width:38px;height:38px;background:var(--green-bg);border:1px solid var(--green-lt);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">🏷️</div>
+                        <strong style="font-size:14px"><?= sanitize($c['category_name']) ?></strong>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="edit_category" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
+                </td>
+                <td>
+                    <a href="products.php?category=<?= $c['category_id'] ?>" class="btn btn-blue btn-sm">
+                        <?= $c['pcount'] ?> products →
+                    </a>
+                </td>
+                <td>
+                    <div style="display:flex;gap:7px">
+                        <button class="btn btn-orange btn-sm"
+                            onclick="editCat(<?= $c['category_id'] ?>,'<?= addslashes(sanitize($c['category_name'])) ?>')">
+                            ✏️ Edit
+                        </button>
+                        <a href="categories.php?delete=<?= $c['category_id'] ?>"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Delete \'<?= addslashes(sanitize($c['category_name'])) ?>\'?')">
+                           🗑 Delete
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            <?php endforeach; endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
-<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js)"></script>
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">➕ Add Category</span>
+            <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="add">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Category Name *</label>
+                    <input type="text" name="category_name" required placeholder="e.g. Fruits & Vegetables" autofocus>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('addModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Category</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">✏️ Edit Category</span>
+            <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="category_id" id="ec_id">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Category Name *</label>
+                    <input type="text" name="category_name" id="ec_name" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-const editModal = document.getElementById('editModal');
-editModal.addEventListener('show.bs.modal', e => {
-    const btn = e.relatedTarget;
-    document.getElementById('edit_cat_id').value   = btn.dataset.id;
-    document.getElementById('edit_cat_name').value = btn.dataset.name;
-});
-document.getElementById('sidebarToggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('show');
-});
+function editCat(id, name) {
+    document.getElementById('ec_id').value   = id;
+    document.getElementById('ec_name').value = name;
+    openModal('editModal');
+}
 </script>
-</body>
-</html>
+
+<?php require_once '../includes/footer.php'; ?>

@@ -1,213 +1,125 @@
 <?php
-session_start();
-require 'config/db.php';
-require 'includes/header.php';
-$pageTitle = "Manage Customers";
+require_once '../includes/auth.php';
+require_once '../includes/db.php';
+requireLogin();
+$db = getDB();
+$page_title = 'Customer List';
 
-$msg = '';
+// Task 3: VIEW ONLY — data comes from Student A's registration module
+// No add/edit/delete — read only
 
-// Delete customer
-if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
-    $conn->query("DELETE FROM customers WHERE customer_id = $id");
-    header("Location: customers.php?deleted=1");
-    exit;
-}
+$search = sanitize($_GET['search'] ?? '');
+$where  = $search ? "WHERE customer_name LIKE '%$search%' OR customer_email LIKE '%$search%' OR customer_phone LIKE '%$search%'" : '';
 
-if (isset($_GET['deleted'])) $msg = ['success', 'Customer deleted.'];
+$result = $db->query("SELECT * FROM customers $where ORDER BY created_at DESC");
+$rows   = [];
+while ($r = $result->fetch_assoc()) $rows[] = $r;
 
-// Search
-$search = trim($_GET['search'] ?? '');
-$where  = "WHERE 1=1";
-$params = [];
-$types  = "";
-if ($search) {
-    $where   .= " AND (c.customer_name LIKE ? OR c.customer_email LIKE ? OR c.customer_phone LIKE ?)";
-    $like     = "%$search%";
-    $params   = [$like, $like, $like];
-    $types    = "sss";
-}
+$total_customers = count($rows);
 
-$sql  = "
-    SELECT c.*,
-           COUNT(DISTINCT o.order_id) AS total_orders,
-           COALESCE(SUM(o.total_price), 0) AS total_spent
-    FROM customers c
-    LEFT JOIN orders o ON c.customer_id = o.customer_id
-    $where
-    GROUP BY c.customer_id
-    ORDER BY c.created_at DESC
-";
-$stmt = $conn->prepare($sql);
-if ($types) $stmt->bind_param($types, ...$params);
-$stmt->execute();
-$customers = $stmt->get_result();
+require_once '../includes/header.php';
 ?>
-<?php require 'includes/sidebar.php'; ?>
-<div id="content-wrapper">
-<?php require 'includes/topbar.php'; ?>
-<div class="p-4">
 
-<?php if ($msg): ?>
-    <div class="alert alert-<?= $msg[0] ?> alert-dismissible fade show">
-        <?= $msg[1] ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="page-head">
+    <div>
+        <h2>Customer List</h2>
+        <p>View-only — customer data from Student A's registration module — Task 3</p>
     </div>
-<?php endif; ?>
-
-<!-- Search -->
-<div class="mb-3">
-    <form class="d-flex gap-2" method="GET">
-        <input type="text" name="search" class="form-control form-control-sm"
-               placeholder="Search by name, email or phone…"
-               value="<?= htmlspecialchars($search) ?>" style="max-width:300px">
-        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
-        <a href="customers.php" class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></a>
-    </form>
+    <div style="background:var(--blue-bg);border:1px solid #a8d1ee;color:var(--blue);padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600">
+        👁 View Only Mode
+    </div>
 </div>
 
-<!-- Table -->
-<div class="content-card card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Orders</th>
-                        <th>Total Spent</th>
-                        <th>Joined</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php if ($customers->num_rows === 0): ?>
-                    <tr><td colspan="8" class="text-center text-muted py-4">No customers found.</td></tr>
-                <?php endif; ?>
-                <?php while ($c = $customers->fetch_assoc()): ?>
+<!-- Info Banner -->
+<div style="background:var(--blue-bg);border:1px solid #a8d1ee;border-radius:var(--radius);padding:14px 18px;margin-bottom:22px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:20px">ℹ️</span>
+    <div>
+        <div style="font-weight:700;color:var(--blue);font-size:13.5px">Read-Only View</div>
+        <div style="font-size:12.5px;color:var(--blue);opacity:.8">This table is populated by Student A's Customer Registration module. Admin can view but not modify customer accounts.</div>
+    </div>
+</div>
+
+<!-- Summary cards -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px">
+    <div class="card" style="padding:18px 20px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Total Customers</div>
+        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--blue)"><?= $total_customers ?></div>
+    </div>
+    <div class="card" style="padding:18px 20px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">With Orders</div>
+        <?php $with_orders = $db->query("SELECT COUNT(DISTINCT customer_id) c FROM orders")->fetch_assoc()['c']; ?>
+        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--green)"><?= $with_orders ?></div>
+    </div>
+    <div class="card" style="padding:18px 20px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">No Orders Yet</div>
+        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--orange)"><?= ($total_customers - $with_orders) ?></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="filters-row">
+        <form method="GET" style="display:flex;gap:10px;align-items:center">
+            <div class="search-bar">
+                <span class="si">🔍</span>
+                <input type="text" name="search" placeholder="Search name, email, phone..." value="<?= $search ?>">
+            </div>
+            <?php if ($search): ?><a href="customers.php" class="btn btn-ghost btn-sm">✕ Clear</a><?php endif; ?>
+        </form>
+        <span style="margin-left:auto;font-size:13px;color:var(--text3)"><?= $total_customers ?> customers</span>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
                 <tr>
-                    <td><?= $c['customer_id'] ?></td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="avatar-circle">
-                                <?= strtoupper(substr($c['customer_name'], 0, 1)) ?>
-                            </div>
-                            <strong><?= htmlspecialchars($c['customer_name']) ?></strong>
-                        </div>
-                    </td>
-                    <td><?= htmlspecialchars($c['customer_email']) ?></td>
-                    <td><?= htmlspecialchars($c['customer_phone'] ?? '—') ?></td>
-                    <td><span class="badge bg-primary rounded-pill"><?= $c['total_orders'] ?></span></td>
-                    <td class="text-success fw-semibold">$<?= number_format($c['total_spent'], 2) ?></td>
-                    <td class="text-muted small"><?= date('d M Y', strtotime($c['created_at'])) ?></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-info me-1"
-                            data-bs-toggle="modal" data-bs-target="#viewModal"
-                            data-id="<?= $c['customer_id'] ?>"
-                            data-name="<?= htmlspecialchars($c['customer_name'], ENT_QUOTES) ?>"
-                            data-email="<?= htmlspecialchars($c['customer_email'], ENT_QUOTES) ?>"
-                            data-phone="<?= htmlspecialchars($c['customer_phone'] ?? '', ENT_QUOTES) ?>"
-                            data-joined="<?= date('d M Y', strtotime($c['created_at'])) ?>"
-                            data-orders="<?= $c['total_orders'] ?>"
-                            data-spent="<?= number_format($c['total_spent'], 2) ?>">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <a href="?delete=<?= $c['customer_id'] ?>" class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('Delete customer <?= htmlspecialchars($c['customer_name'], ENT_QUOTES) ?>? All their orders and addresses will also be deleted.')">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                    </td>
+                    <th>#</th>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Orders</th>
+                    <th>Total Spent</th>
+                    <th>Registered</th>
                 </tr>
-                <?php endwhile; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-</div>
-</div>
-
-<!-- View Customer Modal -->
-<div class="modal fade" id="viewModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-person-circle text-success me-2"></i>Customer Profile</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-4">
-                    <div class="avatar-lg mx-auto mb-2" id="vm_avatar"></div>
-                    <h5 class="fw-bold mb-0" id="vm_name"></h5>
-                    <small class="text-muted" id="vm_email"></small>
-                </div>
-                <div class="row g-3 text-center">
-                    <div class="col-4">
-                        <div class="bg-light rounded-3 p-3">
-                            <div class="fw-bold text-primary fs-5" id="vm_orders"></div>
-                            <small class="text-muted">Orders</small>
+            </thead>
+            <tbody>
+            <?php if (empty($rows)): ?>
+                <tr><td colspan="6"><div class="empty-state"><div class="ei">👥</div><p>No customers registered yet</p></div></td></tr>
+            <?php else: $i=1; foreach ($rows as $c):
+                $oc = $db->query("SELECT COUNT(*) c FROM orders WHERE customer_id={$c['customer_id']}")->fetch_assoc()['c'];
+                $ts = $db->query("SELECT COALESCE(SUM(total_price),0) t FROM orders WHERE customer_id={$c['customer_id']}")->fetch_assoc()['t'];
+            ?>
+            <tr>
+                <td style="color:var(--text3)"><?= $i++ ?></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:11px">
+                        <div style="width:38px;height:38px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--green);flex-shrink:0">
+                            <?= strtoupper(substr($c['customer_name'],0,1)) ?>
+                        </div>
+                        <div>
+                            <div style="font-weight:600"><?= sanitize($c['customer_name']) ?></div>
+                            <div style="font-size:12px;color:var(--text3)"><?= sanitize($c['customer_email']) ?></div>
                         </div>
                     </div>
-                    <div class="col-4">
-                        <div class="bg-light rounded-3 p-3">
-                            <div class="fw-bold text-success fs-5" id="vm_spent"></div>
-                            <small class="text-muted">Spent</small>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="bg-light rounded-3 p-3">
-                            <div class="fw-bold text-secondary fs-6" id="vm_joined"></div>
-                            <small class="text-muted">Joined</small>
-                        </div>
-                    </div>
-                </div>
-                <hr>
-                <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i><span id="vm_phone"></span></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
+                </td>
+                <td style="color:var(--text2)"><?= $c['customer_phone'] ?: '—' ?></td>
+                <td>
+                    <?php if ($oc > 0): ?>
+                    <a href="orders.php?customer=<?= $c['customer_id'] ?>"
+                       style="color:var(--blue);font-weight:700"><?= $oc ?> orders</a>
+                    <?php else: ?>
+                    <span style="color:var(--text3)">No orders</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <strong style="color:<?= $ts > 0 ? 'var(--green)' : 'var(--text3)' ?>">
+                        <?= $ts > 0 ? formatRM($ts) : '—' ?>
+                    </strong>
+                </td>
+                <td style="color:var(--text3);font-size:12px"><?= date('d M Y', strtotime($c['created_at'])) ?></td>
+            </tr>
+            <?php endforeach; endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- Avatar styles -->
-<style>
-.avatar-circle {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, #2ecc71, #27ae60);
-    color: white; font-weight: 700; font-size: 0.9rem;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-.avatar-lg {
-    width: 72px; height: 72px; border-radius: 50%;
-    background: linear-gradient(135deg, #2ecc71, #27ae60);
-    color: white; font-weight: 700; font-size: 1.8rem;
-    display: flex; align-items: center; justify-content: center;
-}
-</style>
-
-<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js)"></script>
-<script>
-const viewModal = document.getElementById('viewModal');
-viewModal.addEventListener('show.bs.modal', e => {
-    const b = e.relatedTarget;
-    document.getElementById('vm_name').textContent    = b.dataset.name;
-    document.getElementById('vm_email').textContent   = b.dataset.email;
-    document.getElementById('vm_phone').textContent   = b.dataset.phone || '—';
-    document.getElementById('vm_joined').textContent  = b.dataset.joined;
-    document.getElementById('vm_orders').textContent  = b.dataset.orders;
-    document.getElementById('vm_spent').textContent   = '$' + b.dataset.spent;
-    document.getElementById('vm_avatar').textContent  = b.dataset.name.charAt(0).toUpperCase();
-});
-
-document.getElementById('sidebarToggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('show');
-});
-</script>
-</body>
-</html>
-
+<?php require_once '../includes/footer.php'; ?>
