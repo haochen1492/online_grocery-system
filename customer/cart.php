@@ -10,7 +10,7 @@ if (!isset($_SESSION['customer_id'])) {
 
 $customer_id = $_SESSION['customer_id'];
 
-// --- FETCH CART DATA ---
+// fetch cart data
 $products = [];
 $total = 0;
 $stmt = $conn->prepare("
@@ -28,7 +28,6 @@ while ($row = $result->fetch_assoc()) {
     $_SESSION['cart'][$row['product_id']] = $row['quantity'];
 }
 
-// --- HANDLE ACTIONS ---
 // Remove Item
 if (isset($_GET['remove'])) {
     $pid = $_GET['remove'];
@@ -40,7 +39,7 @@ if (isset($_GET['remove'])) {
     exit;
 }
 
-// Update Quantity
+// Update quantity
 if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
     $pid = $_GET['product_id'];
     $action = $_GET['update_qty'];

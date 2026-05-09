@@ -10,7 +10,7 @@ if (!isset($_SESSION['customer_id'])) {
 $customer_id = $_SESSION['customer_id'];
 $orders = [];
 
-// 1. Fetch all orders for this customer
+// fetch all orders for this customer
 $stmt = $conn->prepare("SELECT * FROM orders WHERE customer_id = ? ORDER BY order_date DESC");
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
@@ -19,7 +19,7 @@ $result = $stmt->get_result();
 while ($order = $result->fetch_assoc()) {
     $order_id = $order['order_id'];
     
-    // 2. For each order, fetch the items by JOINING order_details and products
+    // for each order, fetch the items by joining order_details and products
     $item_stmt = $conn->prepare("
         SELECT od.*, p.name 
         FROM order_details od 
