@@ -2,20 +2,45 @@
 include '../includes/dbconnect.php';
 session_start();
 
-/*check if user is logged in
 if (!isset($_SESSION['customer_id'])) {
     header('Location: login.php');
     exit;
-}*/
-
-// Fetch user orders
-if (isset($_SESSION['customer_id'])) {
-    $customerId = $_SESSION['customer_id'];
-    // Fetch orders for the logged-in user
-    $stmt = $conn->prepare('SELECT * FROM orders WHERE customer_id = ? ');
-    $stmt->execute([$customerId]);
 }
 
+$customer_id = $_SESSION['customer_id'];
+$orders = [];
+
+// 1. Fetch all orders for this customer
+$stmt = $conn->prepare("SELECT * FROM orders WHERE customer_id = ? ORDER BY order_date DESC");
+$stmt->bind_param("i", $customer_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+while ($order = $result->fetch_assoc()) {
+    $order_id = $order['order_id'];
+    
+    // 2. For each order, fetch the items by JOINING order_details and products
+    $item_stmt = $conn->prepare("
+        SELECT od.*, p.name 
+        FROM order_details od 
+        JOIN products p ON od.product_id = p.product_id 
+        WHERE od.order_id = ?
+    ");
+    $item_stmt->bind_param("i", $order_id);
+    $item_stmt->execute();
+    $item_result = $item_stmt->get_result();
+    
+    $items = [];
+    while ($item = $item_result->fetch_assoc()) {
+        $items[] = $item;
+    }
+    
+    // Add the items array into the order array
+    $order['items'] = $items;
+    $orders[] = $order;
+    $item_stmt->close();
+}
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,11 +68,26 @@ if (isset($_SESSION['customer_id'])) {
             </thead>
             <tbody>
                 <?php foreach ($orders as $order): ?>
+                    <tr style="background-color: #f9f9f9; font-weight: bold;">
+                        <td>#<?php echo htmlspecialchars($order['order_id']); ?></td>
+                        <td><?php echo htmlspecialchars($order['order_date']); ?></td>
+                        <td>RM<?php echo number_format($order['total_price'], 2); ?></td>
+                        <td class="status-<?php echo $order['delivery_status']; ?>">
+                            <?php echo ucfirst($order['delivery_status']); ?>
+                        </td>
+                    </tr>
                     <tr>
-                        <td><?php echo htmlspecialchars($order['id']); ?></td>
-                        <td><?php echo htmlspecialchars($order['created_at']); ?></td>
-                        <td>RM<?php echo number_format($order['total_amount'], 2); ?></td>
-                        <td><?php echo htmlspecialchars($order['status']); ?></td>
+                        <td colspan="4">
+                            <ul style="list-style: none; padding-left: 20px; font-size: 14px;">
+                                <?php foreach ($order['items'] as $item): ?>
+                                    <li>
+                                        • <?php echo htmlspecialchars($item['name']); ?> 
+                                        (x<?php echo $item['quantity']; ?>) - 
+                                        RM<?php echo number_format($item['product_price'], 2); ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
