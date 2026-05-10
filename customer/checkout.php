@@ -138,7 +138,6 @@ $address_result = $stmt_addr->get_result();
     <link rel="stylesheet" href="includes/styles.css">
 </head>
 <body>
-    <header><?php include 'includes/header.php'; ?></header>
 
     <div class="checkout-container">
         <h1>Checkout</h1>
