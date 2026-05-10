@@ -10,20 +10,27 @@ if (!isset($_SESSION['customer_id'])) {
 
 $user_id = $_SESSION['customer_id'];
 $message = "";
-$message_type = "alert-success"; // Default to success style
+$message_type = "alert-success"; 
 
 // 1. HANDLE PROFILE INFORMATION UPDATE
 if (isset($_POST['update_profile'])) {
     $name = $_POST['name'];
     $phone = $_POST['phone'];
     
-    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_phone = ? WHERE customer_id = ?");
-    $stmt->bind_param("ssi", $name, $phone, $user_id);
-    if ($stmt->execute()) {
-        $message = "Profile updated successfully!";
-    } else {
-        $message = "Error updating profile.";
+    // Server-side check to ensure only numbers are saved
+    if (!ctype_digit($phone)) {
+        $message = "Error: This column only accepts numbers.";
         $message_type = "alert-error";
+    } else {
+        $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_phone = ? WHERE customer_id = ?");
+        $stmt->bind_param("ssi", $name, $phone, $user_id);
+        if ($stmt->execute()) {
+            $message = "Profile updated successfully!";
+            $_SESSION['customer_name'] = $name; 
+        } else {
+            $message = "Error updating profile.";
+            $message_type = "alert-error";
+        }
     }
 }
 
@@ -33,16 +40,13 @@ if (isset($_POST['change_password'])) {
     $new_pass = $_POST['new_password'];
     $confirm_pass = $_POST['confirm_password'];
 
-    // Fetch current hashed password from DB
     $stmt = $conn->prepare("SELECT customer_password FROM customers WHERE customer_id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
 
-    // Verify current password first
     if (password_verify($old_pass, $user['customer_password'])) {
-        // Check if new password matches complexity requirements and confirmation
         if ($new_pass === $confirm_pass) {
             $hashed_new = password_hash($new_pass, PASSWORD_DEFAULT);
             $update = $conn->prepare("UPDATE customers SET customer_password = ? WHERE customer_id = ?");
@@ -68,7 +72,6 @@ if (isset($_POST['update_address'])) {
     $state = $_POST['state'];
     $country = $_POST['country'];
 
-    // Check if an address already exists for this user
     $check_addr = $conn->prepare("SELECT address_id FROM addresses WHERE customer_id = ?");
     $check_addr->bind_param("i", $user_id);
     $check_addr->execute();
@@ -107,21 +110,18 @@ $current_data = $stmt->get_result()->fetch_assoc();
     <title>My Profile - Infinity Grocer</title>
     <link rel="stylesheet" href="includes/styles.css">
     <style>
-        .profile-wrapper { max-width: 700px; margin: 30px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .profile-wrapper { max-width: 700px; margin: 30px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-family: Arial, sans-serif; }
         .form-section { border-bottom: 1px solid #ddd; padding-bottom: 25px; margin-bottom: 25px; }
         .form-section:last-child { border-bottom: none; }
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 5px; text-align: center; }
-        .alert-success { background: #d4edda; color: #155724; }
-        .alert-error { background: #f8d7da; color: #721c24; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         label { font-weight: bold; display: block; margin-top: 10px; color: #444; }
         input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn-save { background-color: #329b18; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
+        .btn-save { background-color: #329b18; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; font-weight: bold; }
         .btn-save:hover { background-color: #287a13; }
         .row { display: flex; gap: 15px; }
         .row div { flex: 1; }
-        .requirement { color: red; font-size: 0.85em; display: block; margin-top: 2px; }
-        .valid { color: green; }
-        .error-hint { color: red; font-size: 0.85em; display: none; }
     </style>
 </head>
 <body>
@@ -139,13 +139,13 @@ $current_data = $stmt->get_result()->fetch_assoc();
         <h3>Personal Details</h3>
         <form method="POST">
             <label>Email Address</label>
-            <input type="email" value="<?php echo htmlspecialchars($current_data['customer_email']); ?>" disabled style="background: #f9f9f9;">
+            <input type="email" value="<?php echo htmlspecialchars($current_data['customer_email']); ?>" disabled style="background: #f9f9f9; cursor: not-allowed;">
             
             <label>Full Name</label>
             <input type="text" name="name" value="<?php echo htmlspecialchars($current_data['customer_name']); ?>" required>
             
             <label>Phone Number</label>
-            <input type="text" name="phone" value="<?php echo htmlspecialchars($current_data['customer_phone']); ?>">
+            <input type="text" name="phone" id="phone_input" value="<?php echo htmlspecialchars($current_data['customer_phone']); ?>" oninput="validatePhoneOnly()" placeholder="Example: 0123456789">
             
             <button type="submit" name="update_profile" class="btn-save">Update Personal Info</button>
         </form>
@@ -155,91 +155,88 @@ $current_data = $stmt->get_result()->fetch_assoc();
         <h3>Delivery Address</h3>
         <form method="POST">
             <div class="row">
-                <div>
-                    <label>Unit/House No</label>
-                    <input type="text" name="unit_no" value="<?php echo htmlspecialchars($current_data['unit_no'] ?? ''); ?>" required>
-                </div>
-                <div>
-                    <label>Street</label>
-                    <input type="text" name="street" value="<?php echo htmlspecialchars($current_data['street'] ?? ''); ?>" required>
-                </div>
+                <div><label>Unit/House No</label><input type="text" name="unit_no" value="<?php echo htmlspecialchars($current_data['unit_no'] ?? ''); ?>" required></div>
+                <div><label>Street</label><input type="text" name="street" value="<?php echo htmlspecialchars($current_data['street'] ?? ''); ?>" required></div>
             </div>
-            
             <div class="row">
-                <div>
-                    <label>City</label>
-                    <input type="text" name="city" value="<?php echo htmlspecialchars($current_data['city'] ?? ''); ?>" required>
-                </div>
-                <div>
-                    <label>Postcode</label>
-                    <input type="text" name="postal_code" value="<?php echo htmlspecialchars($current_data['postal_code'] ?? ''); ?>" required>
-                </div>
+                <div><label>City</label><input type="text" name="city" value="<?php echo htmlspecialchars($current_data['city'] ?? ''); ?>" required></div>
+                <div><label>Postcode</label><input type="text" name="postal_code" value="<?php echo htmlspecialchars($current_data['postal_code'] ?? ''); ?>" required></div>
             </div>
-
             <div class="row">
-                <div>
-                    <label>State</label>
-                    <input type="text" name="state" value="<?php echo htmlspecialchars($current_data['state'] ?? ''); ?>" required>
-                </div>
-                <div>
-                    <label>Country</label>
-                    <input type="text" name="country" value="<?php echo htmlspecialchars($current_data['country'] ?? 'Malaysia'); ?>" required>
-                </div>
-            </div>
-            
+        <div>
+            <label>State</label>
+            <select name="state" required style="width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                <option value="" disabled>Select your state</option>
+                <?php
+                $states = [
+                    "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", 
+                    "Pahang", "Penang", "Perak", "Perlis", "Sabah", 
+                    "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", 
+                    "Labuan", "Putrajaya"
+                ];
+                foreach ($states as $state) {
+                    $selected = ($current_data['state'] == $state) ? "selected" : "";
+                    echo "<option value=\"$state\" $selected>$state</option>";
+                }
+                ?>
+            </select>
+        </div>
+        <div>
+        <label>Country</label>
+        <input type="text" name="country" value="Malaysia" readonly style="background-color: #eeeeee; cursor: not-allowed;">
+        </div>
+</div>
             <button type="submit" name="update_address" class="btn-save" style="background-color: #007bff;">Update Delivery Address</button>
         </form>
     </div>
 
-<div class="form-section">
-    <h3>Security Settings</h3>
-    <form method="POST">
-        <label>Current Password</label>
-        <input type="password" name="old_password" id="old_pass" required> 
-        
-        <label>New Password</label>
-        <input type="password" name="new_password" id="new_pass" onkeyup="checkRequirements()" required minlength="15">
-        
-        <div id="passwordTips" style="margin-bottom: 10px;">
-            <span id="len" class="requirement">• Minimum 15 characters</span>
-            <span id="upper" class="requirement">• 1 Uppercase letter</span>
-            <span id="lower" class="requirement">• 1 Lowercase letter</span>
-            <span id="special" class="requirement">• 1 Special character (@, #, $, etc.)</span>
-        </div>
+    <div class="form-section">
+        <h3>Security Settings</h3>
+        <form method="POST">
+            <label>Current Password</label>
+            <input type="password" name="old_password" id="old_pass" required> 
+            <label>New Password</label>
+            <input type="password" name="new_password" id="new_pass" required>
+            <label>Confirm New Password</label>
+            <input type="password" name="confirm_password" id="confirm_pass" required>
 
-        <label>Confirm New Password</label>
-        <input type="password" name="confirm_password" id="confirm_pass" onkeyup="checkMatch()" required minlength="15">
-        <span id="matchError" class="error-hint">Passwords must match!</span>
-
-        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="profileShowPass" onclick="toggleProfilePasswords()">
-            <label for="profileShowPass" style="cursor: pointer; font-weight: normal; margin-top: 0;">Show All Passwords</label>
-        </div>
-        
-        <button type="submit" name="change_password" class="btn-save" style="background-color: #48327a;">Change Account Password</button>
-    </form>
+            <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="profileShowPass" onclick="toggleProfilePasswords()" style="width: auto;">
+                <label for="profileShowPass" style="cursor: pointer; font-weight: normal; margin-top: 0;">Show All Passwords</label>
+            </div>
+            <button type="submit" name="change_password" class="btn-save" style="background-color: #48327a;">Change Account Password</button>
+        </form>
+    </div>
 </div>
 
 <script>
 /**
- * Toggles the visibility of all password fields in the Security section.
- * It targets the IDs: old_pass, new_pass, and confirm_pass.
+ * Stricter validation:
+ * 1. Checks if the last character entered is not a number.
+ * 2. If it's an alphabet/symbol, show an alert.
+ * 3. Immediately removes the invalid character.
  */
+function validatePhoneOnly() {
+    const phoneInput = document.getElementById('phone_input');
+    const regex = /[^0-9]/g;
+
+    if (regex.test(phoneInput.value)) {
+        alert("This column only accepts numbers!");
+        // Remove alphabets/symbols immediately
+        phoneInput.value = phoneInput.value.replace(regex, '');
+    }
+}
+
 function toggleProfilePasswords() {
     var ids = ["old_pass", "new_pass", "confirm_pass"];
-    
     ids.forEach(function(id) {
         var field = document.getElementById(id);
         if (field) {
-            // Switch between 'password' (hidden) and 'text' (visible)
-            if (field.type === "password") {
-                field.type = "text";
-            } else {
-                field.type = "password";
-            }
+            field.type = (field.type === "password") ? "text" : "password";
         }
     });
 }
 </script>
+
 </body>
 </html>
