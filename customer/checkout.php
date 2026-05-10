@@ -108,6 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                         $stmt_deactivate->execute();
                         $stmt_deactivate->close();
 
+                        // insert payment record 
+                        $stmt_pay = $conn->prepare("INSERT INTO payments (order_id, price, payment_status) VALUES (?, ?, 'pending')");
+                        $stmt_pay->bind_param("id", $order_id, $total_price);
+                        $stmt_pay->execute();
+
                         // clear session cart and redirect
                         unset($_SESSION['cart']);
                         header('Location: order_confirmation.php');
@@ -163,7 +168,7 @@ $address_result = $stmt_addr->get_result();
                     <?php while ($addr = $address_result->fetch_assoc()): ?>
                         <label class="address-radio">
                             <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>" required>
-                            <?php echo htmlspecialchars($addr['unit_no'] . ", " . $addr['street'] . ", " . $addr['city']); ?>
+                            <?php echo htmlspecialchars($addr['unit_no'] . ", " . $addr['street'] . ", " . $addr['postal_code'] ." ". $addr['city'] . ", " . $addr['state']); ?>
                         </label>
                     <?php endwhile; ?>
                 <?php else: ?>
@@ -195,7 +200,22 @@ $address_result = $stmt_addr->get_result();
                 <input type="text" id="unit_no" placeholder="Unit/Block" required>
                 <input type="text" id="street" placeholder="Street Name" required>
                 <input type="text" id="city" placeholder="City" required>
-                <input type="text" id="state" placeholder="State" required>
+                <select name="state" id="state" required>
+                    <option value="">-- Select State --</option>
+                    <option value="Johor">Johor</option>
+                    <option value="Kedah">Kedah</option>
+                    <option value="Kelantan">Kelantan</option>
+                    <option value="Melaka">Melaka</option>
+                    <option value="Negeri Sembilan">Negeri Sembilan</option>
+                    <option value="Pahang">Pahang</option>
+                    <option value="Perak">Perak</option>
+                    <option value="Perlis">Perlis</option>
+                    <option value="Penang">Penang</option>
+                    <option value="Sabah">Sabah</option>
+                    <option value="Sarawak">Sarawak</option>
+                    <option value="Selangor">Selangor</option>
+                    <option value="Terengganu">Terengganu</option>
+                </select>
                 <input type="text" id="postal_code" placeholder="Postal Code" required>
                 <div style="display:flex; gap:10px;">
                     <button type="button" class="btn-secondary" onclick="saveNewAddress()">Save Address</button>

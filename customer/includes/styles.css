@@ -221,19 +221,6 @@ body {
     border-radius: 10px;
     box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
 }
-.address-form {
-    display: none;
-    border-color: #000000;
-    border-width: 2px;
-    border-style: solid;
-    padding: 20px;
-    margin: auto;
-    max-width: 1000px;
-    max-height: fit-content;
-    background-color: #ffffff;
-    text-align: left;
-    border-radius: 10px;
-}
 
 .order-confirmation-container {
     display: flex;
