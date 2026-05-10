@@ -12,7 +12,7 @@ $user_id = $_SESSION['customer_id'];
 $message = "";
 $message_type = "alert-success"; 
 
-// 1. HANDLE PROFILE INFORMATION UPDATE
+// Handle profile info update
 if (isset($_POST['update_profile'])) {
     $name = $_POST['name'];
     $phone = $_POST['phone'];
@@ -34,7 +34,7 @@ if (isset($_POST['update_profile'])) {
     }
 }
 
-// 2. HANDLE SECURE PASSWORD CHANGE
+// Handle password change
 if (isset($_POST['change_password'])) {
     $old_pass = $_POST['old_password'];
     $new_pass = $_POST['new_password'];
@@ -63,7 +63,7 @@ if (isset($_POST['change_password'])) {
     }
 }
 
-// 3. HANDLE ADDRESS UPDATE
+// Handle address update
 if (isset($_POST['update_address'])) {
     $unit = $_POST['unit_no'];
     $street = $_POST['street'];
@@ -92,7 +92,7 @@ if (isset($_POST['update_address'])) {
     }
 }
 
-// 4. FETCH LATEST DATA FOR DISPLAY
+// Fetch latest data to pre-fill the form
 $query = "SELECT c.*, a.unit_no, a.street, a.city, a.state, a.postal_code, a.country 
           FROM customers c 
           LEFT JOIN addresses a ON c.customer_id = a.customer_id 

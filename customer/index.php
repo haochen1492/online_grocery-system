@@ -16,11 +16,8 @@ $featured_result = $conn->query($featured_query);
     <link rel="stylesheet" href="includes/styles.css">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        
-        /* Forces the header into a row */
-        .header-container nav { display: flex !important; flex-direction: row !important; gap: 20px; align-items: center; }
 
-        /* Slideshow Fix */
+
         .slideshow-container {
             width: 100%;
             height: 450px;
@@ -31,10 +28,9 @@ $featured_result = $conn->query($featured_query);
         .mySlides img {
             width: 100%;
             height: 450px;
-            object-fit: cover; /* Prevents stretching */
+            object-fit: cover;
         }
 
-        /* Product Grid Fix */
         .product-grid {
             display: flex;
             flex-wrap: wrap;
@@ -79,7 +75,7 @@ $featured_result = $conn->query($featured_query);
 <div class="product-grid">
     <?php while($row = $featured_result->fetch_assoc()): ?>
         <div class="card">
-            <img src="images/<?php echo $row['product_image']; ?>" style="width:100%; height:150px; object-fit:contain;">
+            <img src="../admin/products/<?php echo $row['product_image']; ?>" style="width:100%; height:150px; object-fit:contain;">
             <h4><?php echo htmlspecialchars($row['name']); ?></h4>
             <p>RM <?php echo number_format($row['price'], 2); ?></p>
             <a href="product_details.php?id=<?php echo $row['product_id']; ?>" class="btn">View Items</a>

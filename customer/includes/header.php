@@ -39,7 +39,7 @@ if (session_status() === PHP_SESSION_NONE) {
         <a href="cart.php">Cart</a> 
 
         <?php if (isset($_SESSION['customer_id'])): ?>
-            <a href="orders.php">📦 Orders</a>
+            <a href="order_history.php">📦 Orders</a>
             <a href="profile.php">👤 Profile</a>
             <a href="logout.php" style="color: #d9534f;">Logout</a>
         <?php else: ?>

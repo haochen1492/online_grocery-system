@@ -2,21 +2,21 @@
 include '../includes/dbconnect.php';
 session_start();
 
-// 1. Fetch all categories for the filter menu
+// fetch all categories for the filter menu
 $cat_query = "SELECT * FROM categories";
 $cat_result = $conn->query($cat_query);
 
-// 2. Check if a specific category was clicked
+// check if a specific category was clicked
 $category_id = isset($_GET['category']) ? $_GET['category'] : null;
 
-// 3. Prepare the product query based on the filter
+// prepare the product query based on the filter
 if ($category_id) {
     $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ?");
     $stmt->bind_param("i", $category_id);
     $stmt->execute();
     $product_result = $stmt->get_result();
 } else {
-    // Default: Show all products if no filter is selected
+    // show all products if no filter is selected
     $product_query = "SELECT * FROM products";
     $product_result = $conn->query($product_query);
 }
@@ -84,7 +84,7 @@ if ($category_id) {
 <div class="product-container">
     <h2>Our Fresh Groceries</h2>
 
-    <!-- Category Filter Bar[cite: 3] -->
+    <!-- category filter menu -->
     <div class="filter-menu">
         <a href="product.php" class="<?php echo !$category_id ? 'active' : ''; ?>">All Categories</a>
         <?php while($cat = $cat_result->fetch_assoc()): ?>
@@ -95,14 +95,14 @@ if ($category_id) {
         <?php endwhile; ?>
     </div>
 
-    <!-- Product Display Grid[cite: 3] -->
+    <!-- product grid -->
     <div class="product-grid">
         <?php if ($product_result->num_rows > 0): ?>
             <?php while($row = $product_result->fetch_assoc()): ?>
                 <div class="product-card">
                     <?php 
                         // Path to product images folder
-                        $img = !empty($row['product_image']) ? 'images/'.$row['product_image'] : 'images/no-image.png';
+                        $img = !empty($row['product_image']) ? '../admin/products/'.$row['product_image'] : 'images/no-image.png';
                     ?>
                     <img src="<?php echo $img; ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
                     

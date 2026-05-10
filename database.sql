@@ -2,7 +2,7 @@ CREATE DATABASE online_grocery;
 
 USE online_grocery;
 
-CREATE TABLE admin (
+CREATE TABLE IF NOT EXISTS admin (
     admin_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
@@ -10,13 +10,18 @@ CREATE TABLE admin (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE categories (
+INSERT INTO admin(username, password, admin_role) VALUES ('superadmin', '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 'superadmin');
+
+CREATE TABLE IF NOT EXISTS categories (
     category_id INT PRIMARY KEY AUTO_INCREMENT,
     category_name VARCHAR(255) NOT NULL UNIQUE
 );
+INSERT INTO `categories`( `category_name`) VALUES ('Vegetables');
+INSERT INTO `categories`( `category_name`) VALUES ('Fruits');
+INSERT INTO `categories`( `category_name`) VALUES ('Snacks');
+INSERT INTO `categories`( `category_name`) VALUES ('Food Essentials');
 
-
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     product_id INT PRIMARY KEY AUTO_INCREMENT,
     category_id int NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -27,8 +32,14 @@ CREATE TABLE products (
     FOREIGN KEY (category_id) REFERENCES categories(category_id),
     product_image VARCHAR(255)
 );
+INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('1','Beijing Cabbage (China) 600g','Beijing Cabbage (China) 600g','4.90','50','beijingcabbage600g.jpg');
+INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('2','Dole Banana (Philippines) 1pack','Ripe bananas from tropical plantations, known for their creamy texture and natural sweetness. The hand of fruits arrives at perfect eating ripeness. Required 3-days advance for large order.','8.20','50','dolebanana1pack.jpg');
+INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('3','Oreo Vanilla Slug Sandwich Cookies 110.4g','Oreo Vanilla Slug Sandwich Cookies 110.4g','3.20','50','oreovanillaslugsandwich110.4g.jpg');
+INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('4','San Remo No.5 Spaghetti 500g','San Remo No.5 Spaghetti 500g','5.00','5','sanremospaghetti500g.jpg');
 
-CREATE TABLE customers (
+
+
+CREATE TABLE IF NOT EXISTS customers (
     customer_id INT PRIMARY KEY AUTO_INCREMENT,
     customer_name VARCHAR(255) NOT NULL,
     customer_email VARCHAR(255) NOT NULL UNIQUE,
@@ -37,7 +48,7 @@ CREATE TABLE customers (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE addresses (
+CREATE TABLE IF NOT EXISTS addresses (
     address_id INT PRIMARY KEY AUTO_INCREMENT,
     customer_id int NOT NULL,
     unit_no VARCHAR(255) NOT NULL,
@@ -49,7 +60,7 @@ CREATE TABLE addresses (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     order_id INT PRIMARY KEY AUTO_INCREMENT,
     order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     address_id int NOT NULL,
@@ -60,7 +71,7 @@ CREATE TABLE orders (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE TABLE order_details (
+CREATE TABLE IF NOT EXISTS order_details (
     order_detail_id INT PRIMARY KEY AUTO_INCREMENT,
     order_id int NOT NULL,
     product_id int NOT NULL,
@@ -70,7 +81,7 @@ CREATE TABLE order_details (
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
     payment_id INT PRIMARY KEY AUTO_INCREMENT,
     order_id int NOT NULL,
     payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -79,7 +90,7 @@ CREATE TABLE payments (
     FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
 );
 
-create table cart(
+CREATE TABLE IF NOT EXISTS cart (
     cart_id int primary key AUTO_INCREMENT,
     customer_id int not null,
     product_id int not null,
@@ -90,4 +101,3 @@ create table cart(
     active boolean not null default true
 )
 
-INSERT INTO admin (username, password, admin_role) VALUES ('superadmin', '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 'superadmin');

@@ -51,10 +51,9 @@ body {
     margin: 0 0 5px 0; 
 }
 
-/* --- Cart Item Layout --- */
 .cart-item {
     display: flex;
-    justify-content: space-between; /* Pushes details left, actions right */
+    justify-content: space-between; 
     align-items: center;
     border-bottom: 1px solid #eee;
     padding: 15px 0;
@@ -65,7 +64,6 @@ body {
     text-align: right;
 }
 
-/* --- Quantity Controls --- */
 .qty-controls {
     display: flex;
     align-items: center;
@@ -99,9 +97,8 @@ body {
     text-align: center;
 }
 
-/* --- Remove Button --- */
 .remove-btn {
-    color: #e74c3c; /* Red color */
+    color: #e74c3c; 
     text-decoration: none;
     font-size: 13px;
     display: inline-block;
@@ -217,12 +214,10 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 10px;
     margin: auto;
-    max-width: 1000px;
-    max-height: fit-content;
-    background-color: #ffffff;
-    text-align: left;
+    max-width: 800px;
+    background-color: #ece8e8;
     border-radius: 10px;
     box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
 }
@@ -284,7 +279,7 @@ nav {
 }
 
 nav a {
-    color: #48327a; /* Your primary purple */
+    color: #48327a; 
     margin: 0 15px;
     text-decoration: none;
     font-size: 16px;
@@ -297,7 +292,6 @@ nav a:hover {
     text-decoration: underline;
 }
 
-/* --- Container Layouts --- */
 .container, .cart-container, .profile-wrapper, .auth-container {
     max-width: 900px;
     margin: 40px auto;
@@ -307,7 +301,6 @@ nav a:hover {
     box-shadow: 0 8px 24px rgba(0,0,0,0.05);
 }
 
-/* --- Forms & Inputs --- */
 form {
     display: flex;
     flex-direction: column;
@@ -330,7 +323,7 @@ textarea {
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 14px;
-    box-sizing: border-box; /* Ensures padding doesn't affect width */
+    box-sizing: border-box; 
 }
 
 input:focus {
@@ -339,7 +332,6 @@ input:focus {
     box-shadow: 0 0 5px rgba(50, 155, 24, 0.2);
 }
 
-/* --- Buttons --- */
 button, .btn {
     background-color: #329b18;
     color: white;
@@ -365,7 +357,6 @@ button:hover {
     background-color: #36255c;
 }
 
-/* --- Cart & Tables[cite: 2, 4] --- */
 .cart-item {
     display: flex;
     justify-content: space-between;
@@ -397,12 +388,10 @@ th {
     color: #48327a;
 }
 
-/* --- Status Badges[cite: 1] --- */
 .status-pending { color: #f39c12; font-weight: bold; }
 .status-shipped { color: #3498db; font-weight: bold; }
 .status-delivered { color: #329b18; font-weight: bold; }
 
-/* --- Alerts & Messages --- */
 .error-msg {
     background: #f8d7da;
     color: #721c24;

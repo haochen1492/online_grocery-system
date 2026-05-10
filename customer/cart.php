@@ -43,13 +43,24 @@ if (isset($_GET['remove'])) {
 if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
     $pid = $_GET['product_id'];
     $action = $_GET['update_qty'];
+
     if ($action === 'increase') {
-        $stmt_up = $conn->prepare("UPDATE cart SET quantity = quantity + 1 WHERE customer_id = ? AND product_id = ? AND active = 1");
+        // Check stock before increasing
+        $stmt_check = $conn->prepare("SELECT stock_quantity FROM products WHERE product_id = ?");
+        $stmt_check->bind_param("i", $pid);
+        $stmt_check->execute();
+        $res = $stmt_check->get_result()->fetch_assoc();
+
+        if ($_SESSION['cart'][$pid] < $res['stock_quantity']) {
+            $stmt_up = $conn->prepare("UPDATE cart SET quantity = quantity + 1 WHERE customer_id = ? AND product_id = ? AND active = 1");
+            $stmt_up->bind_param("ii", $customer_id, $pid);
+            $stmt_up->execute();
+        }
     } else {
         $stmt_up = $conn->prepare("UPDATE cart SET quantity = GREATEST(1, quantity - 1) WHERE customer_id = ? AND product_id = ? AND active = 1");
+        $stmt_up->bind_param("ii", $customer_id, $pid);
+        $stmt_up->execute();
     }
-    $stmt_up->bind_param("ii", $customer_id, $pid);
-    $stmt_up->execute();
     header('Location: cart.php');
     exit;
 }
@@ -63,8 +74,7 @@ if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
     <link rel="stylesheet" href="includes/styles.css"> 
 </head>
 <body>
-<header><?php include 'includes/header.php'; ?></header>
-
+<?php include 'includes/header.php'; ?>
 <div class="cart-container"> 
     <h2>Shopping Cart</h2>
 
@@ -84,7 +94,12 @@ if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
                     <div class="qty-controls">
                         <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=decrease" class="qty-btn">-</a>
                         <span class="qty-number"><?php echo $quantity; ?></span>
-                        <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=increase" class="qty-btn">+</a>
+                        <?php if ($quantity < $item['stock_quantity']): ?>
+                            <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=increase" class="qty-btn">+</a>
+                        <?php else: ?>
+                            <span class="qty-btn" style="background:#ccc; cursor:not-allowed;">+</span>
+                            <br><small style="color:red;">Max Stock Reached</small>
+                        <?php endif; ?>
                         <small> x RM<?php echo number_format($item['price'], 2); ?></small>
                     </div>
                 </div>
