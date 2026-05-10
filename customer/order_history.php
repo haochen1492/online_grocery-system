@@ -52,9 +52,7 @@ $stmt->close();
     <title>Order History - Infinity Grocer</title>
     <link rel="stylesheet" href="includes/styles.css">
 </head>
-<header>
-    <?php include 'includes/header.php'; ?>
-</header>
+<?php include 'includes/header.php'; ?>
 <body>
 <div class="order-history-container">
     <h2>Your Order History</h2>
