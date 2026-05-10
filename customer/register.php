@@ -109,6 +109,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <button type="submit" class="btn">Register</button>
     </form>
+        <p style="margin-top: 15px;">
+        Already a Infinity Grocer Member? <a href="login.php">Welcome Back, Log in</a>
+    </p>
 </div>
 
 <script>
