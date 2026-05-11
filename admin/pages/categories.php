@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth.php';
-require_once '../includes/db.php';
+require_once '../db.php';
 requireLogin();$db=getDB();$page_title='Categories';
 if($_SERVER['REQUEST_METHOD']==='POST'){
     $action=$_POST['action']??'';$name=sanitize($_POST['category_name']??'');
