@@ -11,8 +11,13 @@ $customer_id = $_SESSION['customer_id'];
 $orders = [];
 
 // fetch all orders for this customer
-$stmt = $conn->prepare("SELECT * FROM orders WHERE customer_id = ? ORDER BY order_date DESC");
-$stmt->bind_param("i", $customer_id);
+$stmt = $conn->prepare("
+    SELECT o.*, p.payment_status 
+    FROM orders o 
+    LEFT JOIN payments p ON o.order_id = p.order_id 
+    WHERE o.customer_id = ? 
+    ORDER BY o.order_date DESC
+");$stmt->bind_param("i", $customer_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -41,6 +46,16 @@ while ($order = $result->fetch_assoc()) {
     $item_stmt->close();
 }
 
+// Joining with payments table to get payment status
+$stmt = $conn->prepare("
+    SELECT o.*, p.payment_status 
+    FROM orders o 
+    LEFT JOIN payments p ON o.order_id = p.order_id 
+    WHERE o.customer_id = ? 
+    ORDER BY o.order_date DESC
+");
+
+
 $item_stmt = $conn->prepare("SELECT od.*, p.name, p.product_image FROM order_details od JOIN products p ON od.product_id = p.product_id WHERE od.order_id = ?");
 $stmt->close();
 ?>
@@ -60,20 +75,24 @@ $stmt->close();
         <table class="order-history-table">
             <thead>
                 <tr>
-                    <th>Order ID</th>
                     <th>Date</th>
                     <th>Total Amount</th>
-                    <th>Status</th>
+                    <th>Delivery Status</th>
+                    <th>Payment Method</th>
+                    <th>Payment Status</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($orders as $order): ?>
                     <tr style="background-color: #f9f9f9; font-weight: bold;">
-                        <td>#<?php echo htmlspecialchars($order['order_id']); ?></td>
                         <td><?php echo htmlspecialchars($order['order_date']); ?></td>
                         <td>RM<?php echo number_format($order['total_price'], 2); ?></td>
                         <td class="status-<?php echo $order['delivery_status']; ?>">
                             <?php echo ucfirst($order['delivery_status']); ?>
+                        </td>
+                        <td><?php echo isset($order['payment_method']) ? htmlspecialchars($order['payment_method']) : 'N/A'; ?></td>
+                        <td class="status-<?php echo $order['payment_status']; ?>">
+                            <?php echo ucfirst($order['payment_status'] ?? 'pending'); ?>
                         </td>
                     </tr>
                     <tr>

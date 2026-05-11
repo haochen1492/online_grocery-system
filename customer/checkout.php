@@ -62,12 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $payment_method = $_POST['payment_method'];
         $status = 'pending';
 
-        if ($payment_method === 'credit_card') {
+        if ($payment_method === 'Credit/Debit Card') {
             $_SESSION['temp_address_id'] = $address_id;
             $_SESSION['temp_total'] = $grandTotal;
             header('Location: payment.php');
             exit;
-    } elseif ($payment_method === 'cash_on_delivery') {
+        } elseif ($payment_method === 'Cash On Delivery') {
                 
                 // stock validation
                 foreach ($cart_items as $item) {
@@ -81,10 +81,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                 if (empty($error)) {
                     try {
                         // create order
-                        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status) VALUES (?, ?, ?, ?)");
-                        $stmt->bind_param("iids", $customer_id, $address_id, $grandTotal, $status);
+                        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status, payment_method) VALUES (?, ?, ?, ?, ?)");
+                        $stmt->bind_param("iidss", $customer_id, $address_id, $grandTotal, $status, $payment_method);
                         $stmt->execute();
                         $order_id = $conn->insert_id;
+
+                        // insert payment record 
+                        $stmt_pay = $conn->prepare("INSERT INTO payments (order_id, price, payment_status) VALUES (?, ?, 'pending')");
+                        $stmt_pay->bind_param("id", $order_id, $grandTotal);
+                        $stmt_pay->execute();
 
                         // insert order items and update stock
                         $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity, product_price) VALUES (?, ?, ?, ?)");
@@ -107,11 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                         $stmt_deactivate->bind_param("i", $customer_id);
                         $stmt_deactivate->execute();
                         $stmt_deactivate->close();
-
-                        // insert payment record 
-                        $stmt_pay = $conn->prepare("INSERT INTO payments (order_id, price, payment_status) VALUES (?, ?, 'pending')");
-                        $stmt_pay->bind_param("id", $order_id, $total_price);
-                        $stmt_pay->execute();
 
                         // clear session cart and redirect
                         unset($_SESSION['cart']);
@@ -187,8 +187,8 @@ $address_result = $stmt_addr->get_result();
             <label for="payment_method">Payment Method:</label>
             <select name="payment_method" id="payment_method" required>
                 <option value="">-- Select Method --</option>
-                <option value="credit_card">Credit/Debit Card</option>
-                <option value="cash_on_delivery">Cash on Delivery</option>
+                <option value="Credit/Debit Card">Credit/Debit Card</option>
+                <option value="Cash On Delivery">Cash on Delivery</option>
             </select>
             
             <button type="submit" name="place_order" class="place-order-btn">Place Order</button>

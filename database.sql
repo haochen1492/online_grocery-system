@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS orders (
     order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     address_id int NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
     delivery_status enum('pending','shipped', 'delivered') NOT NULL DEFAULT 'pending',
     customer_id int NOT NULL,
     FOREIGN KEY (address_id) REFERENCES addresses(address_id) ON DELETE CASCADE,
@@ -101,3 +102,4 @@ CREATE TABLE IF NOT EXISTS cart (
     active boolean not null default true
 )
 
+ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) AFTER total_price;

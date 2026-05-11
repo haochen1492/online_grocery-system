@@ -15,10 +15,15 @@ $address_id = $_SESSION['temp_address_id'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // insert into orders
-        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status) VALUES (?, ?, ?, 'pending')");
+        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status, payment_method) VALUES (?, ?, ?, 'pending', 'Credit/Debit Card')");
         $stmt->bind_param("iid", $customer_id, $address_id, $total_price);
         $stmt->execute();
         $order_id = $conn->insert_id;
+
+        // insert payment record 
+        $stmt_pay = $conn->prepare("INSERT INTO payments (order_id, price, payment_status) VALUES (?, ?, 'completed')");
+        $stmt_pay->bind_param("id", $order_id, $total_price);
+        $stmt_pay->execute();
 
         // process items, Update Stock, and insert details
         $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity, product_price) VALUES (?, ?, ?, ?)");
@@ -43,11 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_deact = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND active = 1");
         $stmt_deact->bind_param("i", $customer_id);
         $stmt_deact->execute();
-
-        // insert payment record 
-        $stmt_pay = $conn->prepare("INSERT INTO payments (order_id, price, payment_status) VALUES (?, ?, 'completed')");
-        $stmt_pay->bind_param("id", $order_id, $total_price);
-        $stmt_pay->execute();
 
         // Clear session cart and redirect to confirmation
         unset($_SESSION['cart']);
