@@ -10,7 +10,7 @@
 <aside class="sidebar">
   <div class="sb-brand">
     <div class="sb-brand-icon">🛒</div>
-    <div><div class="sb-brand-name">FreshMart</div><div class="sb-brand-sub">Admin Panel</div></div>
+    <div><div class="sb-brand-name">Infinity Grocery</div><div class="sb-brand-sub">Admin Panel</div></div>
   </div>
   <nav class="sb-nav">
     <div class="sb-sec">Overview</div>
