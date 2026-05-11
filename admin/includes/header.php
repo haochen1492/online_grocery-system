@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?= sanitize($page_title??'Admin') ?> — FreshMart</title>
+<title><?= sanitize($page_title??'Admin') ?> — Infinity Grocery</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
