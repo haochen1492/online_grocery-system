@@ -1,21 +1,25 @@
 <?php
 require_once '../includes/auth.php';
-require_once '../db.php';
+require_once '../includes/db.php';
 requireLogin();
 $db = getDB();
 $page_title = 'Customer List';
 
-// Task 3: VIEW ONLY — data comes from Student A's registration module
-// No add/edit/delete — read only
+// Task 3: VIEW ONLY — no add/edit/delete
+// This table is populated by Student A's Customer Registration module
 
 $search = sanitize($_GET['search'] ?? '');
-$where  = $search ? "WHERE customer_name LIKE '%$search%' OR customer_email LIKE '%$search%' OR customer_phone LIKE '%$search%'" : '';
+$where  = $search
+    ? "WHERE customer_name LIKE '%$search%' OR customer_email LIKE '%$search%' OR customer_phone LIKE '%$search%'"
+    : '';
 
 $result = $db->query("SELECT * FROM customers $where ORDER BY created_at DESC");
 $rows   = [];
 while ($r = $result->fetch_assoc()) $rows[] = $r;
 
-$total_customers = count($rows);
+$total       = count($rows);
+$with_orders = $db->query("SELECT COUNT(DISTINCT customer_id) c FROM orders")->fetch_assoc()['c'];
+$no_orders   = $total - $with_orders;
 
 require_once '../includes/header.php';
 ?>
@@ -23,36 +27,38 @@ require_once '../includes/header.php';
 <div class="page-head">
     <div>
         <h2>Customer List</h2>
-        <p>View-only — customer data from Student A's registration module — Task 3</p>
+        <p>Task 3 — View only. Customer data is registered by Student A's module.</p>
     </div>
-    <div style="background:var(--blue-bg);border:1px solid #a8d1ee;color:var(--blue);padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600">
-        👁 View Only Mode
+    <div style="background:var(--blue-bg);border:1px solid #bae0f5;color:var(--blue);padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600">
+        👁 View Only
     </div>
 </div>
 
 <!-- Info Banner -->
-<div style="background:var(--blue-bg);border:1px solid #a8d1ee;border-radius:var(--radius);padding:14px 18px;margin-bottom:22px;display:flex;align-items:center;gap:12px">
-    <span style="font-size:20px">ℹ️</span>
+<div class="alert-banner alert-info" style="margin-bottom:20px">
+    <span style="font-size:22px">ℹ️</span>
     <div>
-        <div style="font-weight:700;color:var(--blue);font-size:13.5px">Read-Only View</div>
-        <div style="font-size:12.5px;color:var(--blue);opacity:.8">This table is populated by Student A's Customer Registration module. Admin can view but not modify customer accounts.</div>
+        <strong style="font-size:13.5px">Read-Only Access</strong><br>
+        <span style="font-size:12.5px;opacity:.9">This list comes from Student A's Customer Registration module. Admin can view customer data but cannot add, edit or delete customers.</span>
     </div>
 </div>
 
-<!-- Summary cards -->
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px">
-    <div class="card" style="padding:18px 20px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Total Customers</div>
-        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--blue)"><?= $total_customers ?></div>
+<!-- Summary -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+    <div class="stat-card">
+        <div class="sc-top"><div class="sc-icon b">👥</div></div>
+        <div class="sc-val"><?= $total ?></div>
+        <div class="sc-lbl">Total Customers</div>
     </div>
-    <div class="card" style="padding:18px 20px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">With Orders</div>
-        <?php $with_orders = $db->query("SELECT COUNT(DISTINCT customer_id) c FROM orders")->fetch_assoc()['c']; ?>
-        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--green)"><?= $with_orders ?></div>
+    <div class="stat-card">
+        <div class="sc-top"><div class="sc-icon g">🛍️</div></div>
+        <div class="sc-val"><?= $with_orders ?></div>
+        <div class="sc-lbl">Have Ordered</div>
     </div>
-    <div class="card" style="padding:18px 20px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">No Orders Yet</div>
-        <div style="font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--orange)"><?= ($total_customers - $with_orders) ?></div>
+    <div class="stat-card">
+        <div class="sc-top"><div class="sc-icon o">⏳</div></div>
+        <div class="sc-val"><?= $no_orders ?></div>
+        <div class="sc-lbl">Never Ordered</div>
     </div>
 </div>
 
@@ -63,18 +69,21 @@ require_once '../includes/header.php';
                 <span class="si">🔍</span>
                 <input type="text" name="search" placeholder="Search name, email, phone..." value="<?= $search ?>">
             </div>
-            <?php if ($search): ?><a href="customers.php" class="btn btn-ghost btn-sm">✕ Clear</a><?php endif; ?>
+            <?php if ($search): ?>
+            <a href="customers.php" class="btn btn-ghost btn-sm">✕ Clear</a>
+            <?php endif; ?>
         </form>
-        <span style="margin-left:auto;font-size:13px;color:var(--text3)"><?= $total_customers ?> customers</span>
+        <span style="margin-left:auto;font-size:13px;color:var(--text3)"><?= $total ?> customers</span>
     </div>
 
-    <div class="table-wrap">
+    <div class="tbl-wrap">
         <table>
             <thead>
                 <tr>
                     <th>#</th>
                     <th>Customer</th>
                     <th>Phone</th>
+                    <th>Delivery Address</th>
                     <th>Orders</th>
                     <th>Total Spent</th>
                     <th>Registered</th>
@@ -82,17 +91,20 @@ require_once '../includes/header.php';
             </thead>
             <tbody>
             <?php if (empty($rows)): ?>
-                <tr><td colspan="6"><div class="empty-state"><div class="ei">👥</div><p>No customers registered yet</p></div></td></tr>
-            <?php else: $i=1; foreach ($rows as $c):
-                $oc = $db->query("SELECT COUNT(*) c FROM orders WHERE customer_id={$c['customer_id']}")->fetch_assoc()['c'];
+                <tr><td colspan="7">
+                    <div class="empty-state"><div class="ei">👥</div><p>No customers registered yet.<br>Customers register via Student A's module.</p></div>
+                </td></tr>
+            <?php else: $i = 1; foreach ($rows as $c):
+                $oc = $db->query("SELECT COUNT(*) cnt FROM orders WHERE customer_id={$c['customer_id']}")->fetch_assoc()['cnt'];
                 $ts = $db->query("SELECT COALESCE(SUM(total_price),0) t FROM orders WHERE customer_id={$c['customer_id']}")->fetch_assoc()['t'];
+                $addr = $db->query("SELECT * FROM addresses WHERE customer_id={$c['customer_id']} LIMIT 1")->fetch_assoc();
             ?>
             <tr>
                 <td style="color:var(--text3)"><?= $i++ ?></td>
                 <td>
                     <div style="display:flex;align-items:center;gap:11px">
                         <div style="width:38px;height:38px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--green);flex-shrink:0">
-                            <?= strtoupper(substr($c['customer_name'],0,1)) ?>
+                            <?= strtoupper(substr($c['customer_name'], 0, 1)) ?>
                         </div>
                         <div>
                             <div style="font-weight:600"><?= sanitize($c['customer_name']) ?></div>
@@ -101,12 +113,21 @@ require_once '../includes/header.php';
                     </div>
                 </td>
                 <td style="color:var(--text2)"><?= $c['customer_phone'] ?: '—' ?></td>
+                <td style="font-size:12px;color:var(--text2);max-width:180px">
+                    <?php if ($addr): ?>
+                        <?= sanitize($addr['unit_no'].' '.$addr['street']) ?>,<br>
+                        <?= sanitize($addr['city'].', '.$addr['state']) ?>
+                    <?php else: ?>
+                        <span style="color:var(--text3)">No address</span>
+                    <?php endif; ?>
+                </td>
                 <td>
                     <?php if ($oc > 0): ?>
-                    <a href="orders.php?customer=<?= $c['customer_id'] ?>"
-                       style="color:var(--blue);font-weight:700"><?= $oc ?> orders</a>
+                    <a href="orders.php?customer=<?= $c['customer_id'] ?>" style="color:var(--blue);font-weight:700">
+                        <?= $oc ?> orders
+                    </a>
                     <?php else: ?>
-                    <span style="color:var(--text3)">No orders</span>
+                    <span style="color:var(--text3)">—</span>
                     <?php endif; ?>
                 </td>
                 <td>

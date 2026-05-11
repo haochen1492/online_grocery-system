@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth.php';
-require_once '../includes/db.php';
+require_once '../db.php';
 requireLogin();$db=getDB();$page_title='Categories';
 if($_SERVER['REQUEST_METHOD']==='POST'){
     $action=$_POST['action']??'';$name=sanitize($_POST['category_name']??'');
@@ -76,3 +76,4 @@ require_once '../includes/header.php';
 </div></div>
 <script>function editCat(id,name){document.getElementById('ec_id').value=id;document.getElementById('ec_name').value=name;openModal('editM')}</script>
 <?php require_once '../includes/footer.php'; ?>
+

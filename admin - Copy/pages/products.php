@@ -1,11 +1,10 @@
 <?php
 require_once '../includes/auth.php';
-require_once '../includes/db.php';
+require_once '../db.php';
 requireLogin();
 $db = getDB();
 $page_title = 'Products';
 
-// ── HANDLE POST ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $name   = sanitize($_POST['name'] ?? '');
@@ -16,49 +15,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $img    = sanitize($_POST['product_image'] ?? '');
 
     if ($action === 'add') {
-        $st = $db->prepare("INSERT INTO products (category_id,name,description,price,stock_quantity,product_image) VALUES (?,?,?,?,?,?)");
-        $st->bind_param("issdis", $cat_id, $name, $desc, $price, $stock, $img);
-        $st->execute();
-        redirect('products.php', "Product '$name' added successfully!");
+        $stmt = $db->prepare("INSERT INTO products (category_id,name,description,price,stock_quantity,product_image) VALUES (?,?,?,?,?,?)");
+        $stmt->bind_param("issdis", $cat_id,$name,$desc,$price,$stock,$img);
+        $stmt->execute();
+        redirect('products.php', "Product '$name' added!");
     } elseif ($action === 'edit') {
         $id = (int)$_POST['product_id'];
-        $st = $db->prepare("UPDATE products SET category_id=?,name=?,description=?,price=?,stock_quantity=?,product_image=? WHERE product_id=?");
-        $st->bind_param("issdisi", $cat_id, $name, $desc, $price, $stock, $img, $id);
-        $st->execute();
-        redirect('products.php', "Product '$name' updated!");
+        $stmt = $db->prepare("UPDATE products SET category_id=?,name=?,description=?,price=?,stock_quantity=?,product_image=? WHERE product_id=?");
+        $stmt->bind_param("issdisi", $cat_id,$name,$desc,$price,$stock,$img,$id);
+        $stmt->execute();
+        redirect('products.php', 'Product updated!');
     }
 }
 
-// ── HANDLE DELETE ──
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $db->query("DELETE FROM products WHERE product_id = $id");
+    $db->query("DELETE FROM products WHERE product_id=$id");
     redirect('products.php', 'Product deleted.', 'info');
 }
 
-// ── FILTERS ──
-$view   = $_GET['view']     ?? 'table';
-$search = sanitize($_GET['search']   ?? '');
-$fcat   = (int)($_GET['category'] ?? 0);
-
-$where = "WHERE 1";
+$view    = $_GET['view'] ?? 'table';
+$search  = sanitize($_GET['search'] ?? '');
+$fcat    = (int)($_GET['category'] ?? 0);
+$where   = "WHERE 1";
 if ($search) $where .= " AND p.name LIKE '%$search%'";
-if ($fcat)   $where .= " AND p.category_id = $fcat";
+if ($fcat)   $where .= " AND p.category_id=$fcat";
 
 $result = $db->query("
     SELECT p.*, c.category_name
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.category_id
-    $where
-    ORDER BY p.created_at DESC
+    FROM products p LEFT JOIN categories c ON p.category_id=c.category_id
+    $where ORDER BY p.created_at DESC
 ");
 $rows = [];
 while ($r = $result->fetch_assoc()) $rows[] = $r;
 
-// Load categories for dropdown
-$cres = $db->query("SELECT * FROM categories ORDER BY category_name");
-$cats = [];
-while ($c = $cres->fetch_assoc()) $cats[] = $c;
+$cats_r = $db->query("SELECT * FROM categories ORDER BY category_name");
+$cats   = [];
+while ($c = $cats_r->fetch_assoc()) $cats[] = $c;
 
 require_once '../includes/header.php';
 ?>
@@ -66,19 +59,18 @@ require_once '../includes/header.php';
 <div class="page-head">
     <div>
         <h2>Products</h2>
-        <p>Task 2 — Add products here. They will be visible on the customer page.</p>
+        <p>Add products — visible on the customer page — Task 2</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
-        <div class="vt">
-            <a href="?view=table&search=<?= $search ?>&category=<?= $fcat ?>" class="vt-btn <?= $view==='table'?'active':'' ?>" title="Table View">☰</a>
-            <a href="?view=grid&search=<?= $search ?>&category=<?= $fcat ?>"  class="vt-btn <?= $view==='grid'?'active':'' ?>"  title="Grid View">⊞</a>
+        <div class="view-toggle">
+            <a href="?view=table&search=<?= $search ?>&category=<?= $fcat ?>" class="vt-btn <?= $view==='table'?'active':'' ?>" title="Table">☰</a>
+            <a href="?view=grid&search=<?= $search ?>&category=<?= $fcat ?>"  class="vt-btn <?= $view==='grid'?'active':'' ?>"  title="Grid">⊞</a>
         </div>
-        <button class="btn btn-primary" onclick="openModal('addM')">＋ Add Product</button>
+        <button class="btn btn-primary" onclick="openModal('addModal')">＋ Add Product</button>
     </div>
 </div>
 
 <div class="card">
-    <!-- FILTERS -->
     <div class="filters-row">
         <form method="GET" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="hidden" name="view" value="<?= $view ?>">
@@ -94,25 +86,22 @@ require_once '../includes/header.php';
                 </option>
                 <?php endforeach; ?>
             </select>
-            <?php if ($search || $fcat): ?>
-            <a href="products.php?view=<?= $view ?>" class="btn btn-ghost btn-sm">✕ Clear</a>
-            <?php endif; ?>
+            <?php if ($search || $fcat): ?><a href="products.php?view=<?= $view ?>" class="btn btn-ghost btn-sm">✕ Clear</a><?php endif; ?>
         </form>
         <span style="margin-left:auto;font-size:13px;color:var(--text3)"><?= count($rows) ?> products</span>
     </div>
 
     <?php if (empty($rows)): ?>
-        <div class="empty-state"><div class="ei">📦</div><p>No products found. Add your first product!</p></div>
-
+        <div class="empty-state"><div class="ei">📦</div><p>No products found</p></div>
     <?php elseif ($view === 'grid'): ?>
-    <!-- ── GRID VIEW ── -->
+    <!-- GRID -->
     <div class="p-grid">
         <?php foreach ($rows as $p): ?>
         <div class="p-card">
             <?php if ($p['stock_quantity'] <= 5): ?>
-                <div class="p-flag p-flag-r" style="background:var(--red-bg);color:var(--red)">OUT SOON</div>
+            <div class="p-flag p-flag-r" style="background:var(--red-bg);color:var(--red)">LOW STOCK</div>
             <?php elseif ($p['stock_quantity'] <= 15): ?>
-                <div class="p-flag p-flag-r" style="background:var(--yellow-bg);color:var(--yellow)">LOW</div>
+            <div class="p-flag p-flag-r" style="background:var(--yellow-bg);color:var(--yellow)">LOW</div>
             <?php endif; ?>
 
             <?php if ($p['product_image']): ?>
@@ -129,15 +118,14 @@ require_once '../includes/header.php';
                 <div class="p-card-price"><?= formatRM($p['price']) ?></div>
                 <div class="p-card-foot">
                     <span class="p-card-stock"
-                        style="color:<?= $p['stock_quantity']<=5?'var(--red)':($p['stock_quantity']<=15?'var(--orange)':'var(--text3)') ?>">
+                          style="color:<?= $p['stock_quantity']<=5?'var(--red)':($p['stock_quantity']<=15?'var(--orange)':'var(--text3)') ?>">
                         📦 <?= $p['stock_quantity'] ?> left
                     </span>
                     <div style="display:flex;gap:5px">
-                        <button class="btn btn-orange btn-sm btn-icon"
-                            onclick='editProduct(<?= htmlspecialchars(json_encode($p)) ?>)'>✏️</button>
+                        <button class="btn btn-orange btn-sm btn-icon" onclick='editProduct(<?= htmlspecialchars(json_encode($p)) ?>)'>✏️</button>
                         <a href="products.php?delete=<?= $p['product_id'] ?>&view=grid"
                            class="btn btn-danger btn-sm btn-icon"
-                           onclick="return confirm('Delete this product?')">🗑</a>
+                           onclick="return confirm('Delete product?')">🗑</a>
                     </div>
                 </div>
             </div>
@@ -146,23 +134,17 @@ require_once '../includes/header.php';
     </div>
 
     <?php else: ?>
-    <!-- ── TABLE VIEW ── -->
-    <div class="tbl-wrap">
+    <!-- TABLE -->
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Image</th>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Added</th>
-                    <th>Actions</th>
+                    <th>#</th><th>Image</th><th>Product</th><th>Category</th>
+                    <th>Price</th><th>Stock</th><th>Added</th><th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-            <?php $i = 1; foreach ($rows as $p): ?>
+            <?php $i=1; foreach ($rows as $p): ?>
             <tr>
                 <td style="color:var(--text3)"><?= $i++ ?></td>
                 <td>
@@ -170,9 +152,7 @@ require_once '../includes/header.php';
                     <img src="<?= sanitize($p['product_image']) ?>" class="p-thumb" alt=""
                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
                     <div class="p-thumb-ph" style="display:none">📦</div>
-                    <?php else: ?>
-                    <div class="p-thumb-ph">📦</div>
-                    <?php endif; ?>
+                    <?php else: ?><div class="p-thumb-ph">📦</div><?php endif; ?>
                 </td>
                 <td>
                     <div style="font-weight:600"><?= sanitize($p['name']) ?></div>
@@ -194,11 +174,10 @@ require_once '../includes/header.php';
                 <td style="color:var(--text3);font-size:12px"><?= date('d M Y', strtotime($p['created_at'])) ?></td>
                 <td>
                     <div style="display:flex;gap:6px">
-                        <button class="btn btn-orange btn-sm btn-icon"
-                            onclick='editProduct(<?= htmlspecialchars(json_encode($p)) ?>)'>✏️ Edit</button>
+                        <button class="btn btn-orange btn-sm btn-icon" onclick='editProduct(<?= htmlspecialchars(json_encode($p)) ?>)'>✏️</button>
                         <a href="products.php?delete=<?= $p['product_id'] ?>"
                            class="btn btn-danger btn-sm btn-icon"
-                           onclick="return confirm('Delete this product?')">🗑</a>
+                           onclick="return confirm('Delete?')">🗑</a>
                     </div>
                 </td>
             </tr>
@@ -209,12 +188,12 @@ require_once '../includes/header.php';
     <?php endif; ?>
 </div>
 
-<!-- ── ADD MODAL ── -->
-<div class="modal-overlay" id="addM">
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
     <div class="modal modal-lg">
         <div class="modal-header">
-            <span class="modal-title">➕ Add New Product</span>
-            <button class="modal-close" onclick="closeModal('addM')">✕</button>
+            <span class="modal-title">➕ Add Product</span>
+            <button class="modal-close" onclick="closeModal('addModal')">✕</button>
         </div>
         <form method="POST">
             <input type="hidden" name="action" value="add">
@@ -235,12 +214,12 @@ require_once '../includes/header.php';
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Product Image URL</label>
+                    <label>Image URL</label>
                     <input type="text" name="product_image" id="ai_url"
                            placeholder="https://images.unsplash.com/..."
-                           oninput="previewImg('ai_prev', this.value)">
+                           oninput="previewImg('ai_prev',this.value)">
                     <div style="margin-top:9px">
-                        <img id="ai_prev" src="" style="width:80px;height:80px;border-radius:9px;object-fit:cover;border:1px solid var(--border);display:none" alt="">
+                        <img id="ai_prev" src="" style="width:78px;height:78px;border-radius:9px;object-fit:cover;border:1px solid var(--border);display:none" alt="">
                     </div>
                 </div>
                 <div class="form-group">
@@ -259,19 +238,19 @@ require_once '../includes/header.php';
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" onclick="closeModal('addM')">Cancel</button>
+                <button type="button" class="btn btn-ghost" onclick="closeModal('addModal')">Cancel</button>
                 <button type="submit" class="btn btn-primary">Add Product</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- ── EDIT MODAL ── -->
-<div class="modal-overlay" id="editM">
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
     <div class="modal modal-lg">
         <div class="modal-header">
             <span class="modal-title">✏️ Edit Product</span>
-            <button class="modal-close" onclick="closeModal('editM')">✕</button>
+            <button class="modal-close" onclick="closeModal('editModal')">✕</button>
         </div>
         <form method="POST">
             <input type="hidden" name="action" value="edit">
@@ -292,11 +271,11 @@ require_once '../includes/header.php';
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Product Image URL</label>
+                    <label>Image URL</label>
                     <input type="text" name="product_image" id="ep_img"
-                           oninput="previewImg('ep_prev', this.value)">
+                           oninput="previewImg('ep_prev',this.value)">
                     <div style="margin-top:9px">
-                        <img id="ep_prev" src="" style="width:80px;height:80px;border-radius:9px;object-fit:cover;border:1px solid var(--border)" alt="">
+                        <img id="ep_prev" src="" style="width:78px;height:78px;border-radius:9px;object-fit:cover;border:1px solid var(--border)" alt="">
                     </div>
                 </div>
                 <div class="form-group">
@@ -315,7 +294,7 @@ require_once '../includes/header.php';
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" onclick="closeModal('editM')">Cancel</button>
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
@@ -334,7 +313,7 @@ function editProduct(p) {
     const prev = document.getElementById('ep_prev');
     if (p.product_image) { prev.src = p.product_image; prev.style.display = 'block'; }
     else prev.style.display = 'none';
-    openModal('editM');
+    openModal('editModal');
 }
 </script>
 
