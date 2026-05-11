@@ -64,22 +64,22 @@ input::placeholder{color:#ccc}
   <div class="ldots"></div>
   <div class="lc">
     <div class="lico">🛒</div>
-    <h1>FreshMart<br>Admin</h1>
-    <p>Student C — Admin Module. Manage your online grocery store.</p>
+    <h1>Infinity Grocery<br>Admin</h1>
+    <p>Admin Module.</p>
     <div class="tasks">
-      <div class="task"><span class="ti">👑</span><div><strong>Task 1</strong> — Superadmin adds &amp; manages admins</div></div>
-      <div class="task"><span class="ti">📦</span><div><strong>Task 2</strong> — Add categories &amp; products (visible to customers)</div></div>
-      <div class="task"><span class="ti">👥</span><div><strong>Task 3</strong> — View customer list (from Student A)</div></div>
-      <div class="task"><span class="ti">🛍️</span><div><strong>Task 4</strong> — View orders &amp; product list</div></div>
-      <div class="task"><span class="ti">🔄</span><div><strong>Task 5</strong> — Change order delivery status</div></div>
-      <div class="task"><span class="ti">📈</span><div><strong>Task 6</strong> — Generate sales report</div></div>
+      <div class="task"><span class="ti">👑</span><div><strong>Option 1</strong> — Superadmin adds &amp; manages admins</div></div>
+      <div class="task"><span class="ti">📦</span><div><strong>Option 2</strong> — Add categories &amp; products (visible to customers)</div></div>
+      <div class="task"><span class="ti">👥</span><div><strong>Option 3</strong> — View customer list (from Student A)</div></div>
+      <div class="task"><span class="ti">🛍️</span><div><strong>Option 4</strong> — View orders &amp; product list</div></div>
+      <div class="task"><span class="ti">🔄</span><div><strong>Option 5</strong> — Change order delivery status</div></div>
+      <div class="task"><span class="ti">📈</span><div><strong>Option 6</strong> — Generate sales report</div></div>
     </div>
   </div>
 </div>
 <div class="right">
   <div class="box">
     <h2>Welcome back 👋</h2>
-    <p class="sub">Sign in to your FreshMart admin account</p>
+    <p class="sub">Sign in to your Infinity Grocery admin account</p>
     <?php if($error): ?><div class="err">⚠ <?= $error ?></div><?php endif; ?>
     <form method="POST">
       <div class="fg">
@@ -100,7 +100,7 @@ input::placeholder{color:#ccc}
       <strong>Superadmin:</strong> superadmin / superadmin123<br>
       <strong>Admin:</strong> admin / admin123
     </div>
-    <p class="copy">© <?= date('Y') ?> FreshMart. Student C — Admin Module.</p>
+    <p class="copy">© <?= date('Y') ?> Infinity Grocery </p>
   </div>
 </div>
 </body></html>
