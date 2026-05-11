@@ -61,8 +61,8 @@ $featured_result = $conn->query($featured_query);
 <?php include 'includes/header.php'; ?>
 
 <div class="slideshow-container">
-    <div class="mySlides fade"><img src="images/banner_1.jpg"></div>
     <div class="mySlides fade"><img src="images/banner_2.webp"></div>
+    <div class="mySlides fade"><img src="images/banner_1.jpg"></div>
     <div class="mySlides fade"><img src="images/banner_3.jpg"></div>
     <div class="mySlides fade"><img src="images/banner_4.jpg"></div>
     <div class="mySlides fade"><img src="images/banner_5.webp"></div>
