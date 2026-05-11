@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth.php';
-require_once '../includes/db.php';
+require_once '../db.php';
 requireLogin();
 $db = getDB();
 $page_title = 'Categories';
@@ -45,6 +45,9 @@ while ($r = $result->fetch_assoc()) $rows[] = $r;
 require_once '../includes/header.php';
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <div class="page-head">
     <div>
         <h2>Categories</h2>

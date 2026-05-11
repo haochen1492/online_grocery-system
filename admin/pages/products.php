@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth.php';
-require_once '../includes/db.php';
+require_once '../db.php';
 requireLogin();
 $db = getDB();
 $page_title = 'Products';

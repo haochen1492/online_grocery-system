@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/auth.php';
-require_once 'includes/db.php';
+require_once '../db.php';
 
 if (isLoggedIn()) { header('Location: pages/dashboard.php'); exit; }
 

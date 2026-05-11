@@ -1,7 +1,6 @@
 <?php
 require_once '../includes/auth.php';
-require_once '../includes/db.php';
-requireSuperAdmin();
+require_once '../db.php';
 $db=getDB();
 $page_title='Manage Admins';
 
@@ -41,6 +40,13 @@ $rows=[];$r=$db->query("SELECT * FROM admin ORDER BY created_at DESC");
 while($x=$r->fetch_assoc())$rows[]=$x;
 require_once '../includes/header.php';
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Admins - Infinity Grocer Admin</title>
+    <link rel="stylesheet" href="../style.css">
 <div class="page-head">
   <div><h2>Manage Admins</h2><p>Task 1 — Only superadmin can add/edit/delete admin accounts</p></div>
   <button class="btn btn-primary" onclick="openModal('addM')">＋ Add Admin</button>
