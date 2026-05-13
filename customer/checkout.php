@@ -67,6 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             $_SESSION['temp_total'] = $grandTotal;
             header('Location: payment.php');
             exit;
+        } elseif ($payment_method === "Touch 'n Go E-Wallet") {
+            $_SESSION['temp_address_id'] = $address_id;
+            $_SESSION['temp_total'] = $grandTotal;
+            header('Location: tng_payment.php');
+            exit;
         } elseif ($payment_method === 'Cash On Delivery') {
                 
                 // stock validation
@@ -189,6 +194,7 @@ $address_result = $stmt_addr->get_result();
                 <option value="">-- Select Method --</option>
                 <option value="Credit/Debit Card">Credit/Debit Card</option>
                 <option value="Cash On Delivery">Cash on Delivery</option>
+                <option value="Touch 'n Go E-Wallet">Touch 'n Go E-Wallet</option>
             </select>
             
             <button type="submit" name="place_order" class="place-order-btn">Place Order</button>
