@@ -15,7 +15,7 @@ $address_id = $_SESSION['temp_address_id'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // insert into orders
-        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status, payment_method) VALUES (?, ?, ?, 'pending', 'Touch 'n Go E-Wallet')");
+        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status, payment_method) VALUES (?, ?, ?, 'pending', 'TnG E-Wallet')");
         $stmt->bind_param("iid", $customer_id, $address_id, $total_price);
         $stmt->execute();
         $order_id = $conn->insert_id;
@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "Payment Error: " . $e->getMessage();
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -89,8 +90,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <option value="">-- Select Country Code --</option>
                 <option value="+60">+60 (Malaysia)</option>
                 <option value="+65">+65 (Singapore)</option>
-                <option value="+66">+66 (Thailand)</option>
-                <option value="+84">+84 (Vietnam)</option>
             </select>
             <input type="tel" name="phone_number" placeholder="Enter Phone Number" required>
             <p>6-digit PIN</p>
@@ -101,3 +100,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
+<script>
+    // Basic client-side validation for TnG E-Wallet payment form
+    document.querySelector('.payment-form').addEventListener('submit', function(e) {
+        const phoneInput = document.querySelector('input[name="phone_number"]');
+        const pinInput = document.querySelector('input[name="tng_pin"]');
+        const phonePattern = /^\d{9,10}$/; // Basic pattern for phone numbers
+        const pinPattern = /^\d{6}$/; // 6-digit PIN
+
+        if (!phonePattern.test(phoneInput.value)) {
+            alert('Please enter a valid phone number (9-10 digits).');
+            e.preventDefault();
+            return;
+        }
+
+        if (!pinPattern.test(pinInput.value)) {
+            alert('Please enter a valid 6-digit TNG PIN.');
+            e.preventDefault();
+            return;
+        }
+    });

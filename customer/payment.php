@@ -98,3 +98,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
+<script>
+    // Basic client-side validation for credit/debit card form
+    document.querySelector('.payment-form').addEventListener('submit', function(e) {
+        // Basic validation example
+        const cardNumber = document.getElementById('card_number').value;
+        const expiryDate = document.getElementById('expiry_date').value;
+        const cvv = document.getElementById('cvv').value;
+
+        if (!/^\d{16}$/.test(cardNumber)) {
+            alert('Please enter a valid 16-digit card number.');
+            e.preventDefault();
+            return;
+        }
+
+        if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
+            alert('Please enter a valid expiry date in MM/YY format.');
+            e.preventDefault();
+            return;
+        }
+
+        if (!/^\d{3}$/.test(cvv)) {
+            alert('Please enter a valid 3-digit CVV.');
+            e.preventDefault();
+            return;
+        }
+    });
+</script>

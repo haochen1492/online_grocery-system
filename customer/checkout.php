@@ -262,6 +262,45 @@ $address_result = $stmt_addr->get_result();
                 alert('Could not connect to the server.');
             });
         }
+
+        // Basic client-side validation for payment method and address selection
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const paymentMethod = document.getElementById('payment_method').value;
+            const addressSelected = document.querySelector('input[name="address_id"]:checked');
+
+            if (!paymentMethod) {
+                alert('Please select a payment method.');
+                e.preventDefault();
+                return;
+            }
+
+            if (!addressSelected) {
+                alert('Please select a shipping address.');
+                e.preventDefault();
+                return;
+            }
+        });
+
+        // basic client-side validation for address form
+        document.getElementById('addressInputs').addEventListener('submit', function(e) {
+            const unitNo = document.getElementById('unit_no').value.trim();
+            const street = document.getElementById('street').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const state = document.getElementById('state').value;
+            const postalCode = document.getElementById('postal_code').value.trim();
+
+            if (!unitNo || !street || !city || !state || !postalCode) {
+                alert('Please fill in all address fields.');
+                e.preventDefault();
+                return;
+            }
+
+            if (!/^\d{5}$/.test(postalCode)) {
+                alert('Please enter a valid 5-digit postal code.');
+                e.preventDefault();
+                return;
+            }
+        });
     </script>
 </body>
 </html>

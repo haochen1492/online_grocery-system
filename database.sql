@@ -36,6 +36,8 @@ INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_qua
 INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('2','Dole Banana (Philippines) 1pack','Ripe bananas from tropical plantations, known for their creamy texture and natural sweetness. The hand of fruits arrives at perfect eating ripeness. Required 3-days advance for large order.','8.20','50','dolebanana1pack.jpg');
 INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('3','Oreo Vanilla Slug Sandwich Cookies 110.4g','Oreo Vanilla Slug Sandwich Cookies 110.4g','3.20','50','oreovanillaslugsandwich110.4g.jpg');
 INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('4','San Remo No.5 Spaghetti 500g','San Remo No.5 Spaghetti 500g','5.00','5','sanremospaghetti500g.jpg');
+INSERT INTO `products` (`category_id`, `name`, `description`, `price`, `stock_quantity`, `created_at`, `product_image`) VALUES ('1', 'Bok Choy (Sawi Putih) 350g', 'Bok Choy (Sawi Putih) 350g', '4.70', '50', '2026-05-13 11:11:31', 'bokchoy(sawiputih)350g.webp');
+
 
 
 
