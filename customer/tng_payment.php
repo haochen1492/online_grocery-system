@@ -11,6 +11,7 @@ if (!isset($_SESSION['customer_id'])) {
 $customer_id = $_SESSION['customer_id'];
 $total_price = $_SESSION['temp_total'];
 $address_id = $_SESSION['temp_address_id'];
+$selected_ids = $_SESSION['checkout_final_items'] ?? [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -29,30 +30,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity, product_price) VALUES (?, ?, ?, ?)");
         $stmt_stock = $conn->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?");
 
-        foreach ($_SESSION['cart'] as $product_id => $quantity) {
-            // Fetch current price to lock it in order_details
-            $res = $conn->query("SELECT price FROM products WHERE product_id = $product_id");
-            $p_data = $res->fetch_assoc();
-            $current_price = $p_data['price'];
+        foreach ($selected_ids as $product_id) {
+            if (isset($_SESSION['cart'][$product_id])) {
+                $quantity = $_SESSION['cart'][$product_id];
+            
+                // Fetch current price to lock it in order_details
+                $res = $conn->query("SELECT price FROM products WHERE product_id = $product_id");
+                $p_data = $res->fetch_assoc();
+                $current_price = $p_data['price'];
 
-            // Insert details
-            $stmt_items->bind_param("iiid", $order_id, $product_id, $quantity, $current_price);
-            $stmt_items->execute();
+                // Insert details
+                $stmt_items->bind_param("iiid", $order_id, $product_id, $quantity, $current_price);
+                $stmt_items->execute();
 
-            // Update stock
-            $stmt_stock->bind_param("ii", $quantity, $product_id);
-            $stmt_stock->execute();
+                // Update stock
+                $stmt_stock->bind_param("ii", $quantity, $product_id);
+                $stmt_stock->execute();
+            }
         }
 
         // deactivate cart items
-        $stmt_deact = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND active = 1");
-        $stmt_deact->bind_param("i", $customer_id);
-        $stmt_deact->execute();
+        if (!empty($selected_ids)) {
+            $placeholders = implode(',', array_fill(0, count($selected_ids), '?'));
+            $stmt_deact = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND product_id IN ($placeholders)");
+            $types = "i" . str_repeat('i', count($selected_ids));
+            $stmt_deact->bind_param($types, $customer_id, ...$selected_ids);
+            $stmt_deact->execute();
+        }
 
         // Clear session cart and redirect to confirmation
         unset($_SESSION['cart']);
         unset($_SESSION['temp_total']);
         unset($_SESSION['temp_address_id']);
+        unset($_SESSION['checkout_final_items']);
         
         header('Location: order_confirmation.php');
         exit;
@@ -64,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -84,12 +95,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr><td>RM <?php echo number_format($total_price, 2); ?></td></tr>
             </table>
         </div>
-        <img src="images/Touch_'n_Go_eWallet_logo.png" alt="TnG Logo" class="tng-logo">
+        <div class="tng-logo">
+            <img src="images/Touch_'n_Go_eWallet_logo.png" alt="TnG Logo" style="width: 75px; align-self: left;">
+        </div>
         <div class="tng-login">
             <h2>Login</h2>
-            <input type="tel" name="phone_number" placeholder="Enter Phone Number" required>
+            <input type="tel" name="phone_number" id="phone_number" placeholder="Enter Phone Number" required>
             <p>6-digit PIN</p>
-            <input type="password" name="tng_pin" placeholder="Enter TNG PIN" required>
+            <input type="password" name="tng_pin" id="tng_pin" placeholder="Enter TNG PIN" required>
         </div>
         <button type="submit" class="pay-btn">Pay Now</button>
     </form>
@@ -99,20 +112,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
     // Basic client-side validation for TnG E-Wallet payment form
     document.querySelector('.payment-form').addEventListener('submit', function(e) {
-        const phoneInput = document.querySelector('input[name="phone_number"]');
-        const pinInput = document.querySelector('input[name="tng_pin"]');
-        const phonePattern = /^\d{9,10}$/; // Basic pattern for phone numbers
-        const pinPattern = /^\d{6}$/; // 6-digit PIN
+        const phoneInput = document.getElementById('phone_number');
+        const pinInput = document.getElementById('tng_pin');
 
-        if (!phonePattern.test(phoneInput.value)) {
+        if (!/^\d{10,11}$/.test(phoneInput.value)) {
             alert('Please enter a valid phone number (9-10 digits).');
             e.preventDefault();
             return;
         }
 
-        if (!pinPattern.test(pinInput.value)) {
+        if (!/^\d{6}$/.test(pinInput.value)) {
             alert('Please enter a valid 6-digit TNG PIN.');
             e.preventDefault();
             return;
         }
     });
+</script>
