@@ -84,13 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr><td>RM <?php echo number_format($total_price, 2); ?></td></tr>
             </table>
         </div>
+        <img src="images/Touch_'n_Go_eWallet_logo.png" alt="TnG Logo" class="tng-logo">
         <div class="tng-login">
             <h2>Login</h2>
-            <select name='country_code' required>
-                <option value="">-- Select Country Code --</option>
-                <option value="+60">+60 (Malaysia)</option>
-                <option value="+65">+65 (Singapore)</option>
-            </select>
             <input type="tel" name="phone_number" placeholder="Enter Phone Number" required>
             <p>6-digit PIN</p>
             <input type="password" name="tng_pin" placeholder="Enter TNG PIN" required>

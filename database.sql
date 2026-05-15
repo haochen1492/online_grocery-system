@@ -101,7 +101,10 @@ CREATE TABLE IF NOT EXISTS cart (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(product_id),
-    active boolean not null default true
-)
+    active boolean not null default true,
+    selected boolean not null default true
+);
 
 ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) AFTER total_price;
+
+ALTER TABLE cart ADD COLUMN selected boolean NOT NULL DEFAULT true AFTER active;

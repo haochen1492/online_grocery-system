@@ -35,20 +35,28 @@ $error = '';
 $cart_items = [];
 $totalAmount = 0;
 
-if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
-    $ids = array_keys($_SESSION['cart']);
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_items'])) {
+    $selected_ids = $_POST['selected_items'];
+    $_SESSION['checkout_final_items'] = $selected_ids; 
+} elseif (isset($_SESSION['checkout_final_items'])) {
+    $selected_ids = $_SESSION['checkout_final_items'];
+} else {
+    header('Location: cart.php');
+    exit;
+}
+    
+    $placeholders = implode(',', array_fill(0, count($selected_ids), '?'));
     $stmt_cart = $conn->prepare("SELECT * FROM products WHERE product_id IN ($placeholders)");
-    $types = str_repeat('i', count($ids));
-    $stmt_cart->bind_param($types, ...$ids);
+    $types = str_repeat('i', count($selected_ids));
+    $stmt_cart->bind_param($types, ...$selected_ids);
     $stmt_cart->execute();
     $cart_result = $stmt_cart->get_result();
     
     while ($row = $cart_result->fetch_assoc()) {
         $cart_items[] = $row;
+        //calculate total based only on the quantity of selected items
         $totalAmount += ($row['price'] * $_SESSION['cart'][$row['product_id']]);
     }
-}
 
 $shippingFee = 5.00; 
 $grandTotal = $totalAmount + $shippingFee;
