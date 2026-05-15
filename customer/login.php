@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Online Grocery System</title>
     <link rel="stylesheet" href="includes/styles.css"> 
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
 
@@ -62,13 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="email" name="email" required placeholder="Enter your email">
 
         <label for="password">Password:</label>
-        <!-- Added ID for the password field to be targeted by JS[cite: 6] -->
-        <input type="password" name="password" id="loginPassword" required placeholder="Enter your password">
-
-        <!-- NEW: Show Password Checkbox[cite: 6] -->
-        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="showPassToggle" onclick="togglePassword()">
-            <label for="showPassToggle" style="cursor: pointer; font-weight: normal; margin-top: 0;">Show Password</label>
+        <div class="password-wrapper">
+            <input type="password" name="password" id="loginPassword" required placeholder="Enter your password">
+            <span class="material-icons toggle-eye" onclick="toggleSinglePass('loginPassword', this)">visibility_off</span>
         </div>
 
         <button type="submit" class="btn">Login</button>
@@ -80,13 +77,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 <script>
-// Function to toggle password visibility[cite: 6]
-function togglePassword() {
-    var x = document.getElementById("loginPassword");
-    if (x.type === "password") {
-        x.type = "text";
+function toggleSinglePass(fieldId, iconElement) {
+    const passwordField = document.getElementById(fieldId);
+    
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        iconElement.textContent = "visibility"; // Changes icon to open eye
     } else {
-        x.type = "password";
+        passwordField.type = "password";
+        iconElement.textContent = "visibility_off"; // Changes icon to slashed eye
     }
 }
 </script>

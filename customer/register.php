@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Infinity Grocer</title>
     <link rel="stylesheet" href="includes/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
         .requirement { color: red; font-size: 0.85em; display: block; margin-top: 2px; }
         .valid { color: green; }
@@ -90,8 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="text" name="phone" id="phoneInput" oninput="validatePhone()" required>
 
         <label>Password:</label>
-        <input type="password" name="password" id="regPassword" onkeyup="checkRequirements()" required>
-        <!-- Requirement Tips[cite: 5] -->
+        <div class="password-wrapper">
+            <input type="password" name="password" id="regPassword" onkeyup="checkRequirements()" required>
+            <span class="material-icons toggle-eye" onclick="toggleSinglePass('regPassword', this)">visibility_off</span>
+        </div>  
         <div id="passwordTips" style="margin-bottom: 10px;">
             <span id="len" class="requirement">• Minimum 15 characters</span>
             <span id="upper" class="requirement">• 1 Uppercase letter</span>
@@ -100,7 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
 
         <label>Confirm Password:</label>
-        <input type="password" name="confirm_password" id="confirmPassword" onkeyup="checkMatch()" required>
+        <div class="password-wrapper">
+            <input type="password" name="confirm_password" id="confirmPassword" onkeyup="checkMatch()" required>
+            <span class="material-icons toggle-eye" onclick="toggleSinglePass('confirmPassword', this)">visibility_off</span>
+        </div>
         <span id="matchError" class="error-hint">Passwords must match!</span>
         
         <div style="margin: 10px 0;">
@@ -144,11 +150,16 @@ function validatePhone() {
     input.value = input.value.replace(/[^0-9]/g, ''); // Numeric only[cite: 6]
 }
 
-function togglePassword() {
-    var p1 = document.getElementById("regPassword");
-    var p2 = document.getElementById("confirmPassword");
-    p1.type = p1.type === "password" ? "text" : "password";
-    p2.type = p2.type === "password" ? "text" : "password";
+function toggleSinglePass(fieldId, iconElement) {
+    const passwordField = document.getElementById(fieldId);
+    
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        iconElement.textContent = "visibility"; // Changes icon to open eye
+    } else {
+        passwordField.type = "password";
+        iconElement.textContent = "visibility_off"; // Changes icon to slashed eye
+    }
 }
 </script>
 

@@ -109,6 +109,7 @@ $current_data = $stmt->get_result()->fetch_assoc();
     <meta charset="UTF-8">
     <title>My Profile - Infinity Grocer</title>
     <link rel="stylesheet" href="includes/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
         .profile-wrapper { max-width: 700px; margin: 30px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-family: Arial, sans-serif; }
         .form-section { border-bottom: 1px solid #ddd; padding-bottom: 25px; margin-bottom: 25px; }
@@ -191,31 +192,32 @@ $current_data = $stmt->get_result()->fetch_assoc();
     </div>
 
     <div class="form-section">
-        <h3>Security Settings</h3>
+        <h3>Change Password</h3>
         <form method="POST">
-            <label>Current Password</label>
-            <input type="password" name="old_password" id="old_pass" required> 
-            <label>New Password</label>
-            <input type="password" name="new_password" id="new_pass" required>
-            <label>Confirm New Password</label>
-            <input type="password" name="confirm_password" id="confirm_pass" required>
-
-            <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="profileShowPass" onclick="toggleProfilePasswords()" style="width: auto;">
-                <label for="profileShowPass" style="cursor: pointer; font-weight: normal; margin-top: 0;">Show All Passwords</label>
-            </div>
-            <button type="submit" name="change_password" class="btn-save" style="background-color: #48327a;">Change Account Password</button>
-        </form>
     </div>
-</div>
+        <label>Current Password</label>
+        <div class="password-wrapper">
+        <input type="password" name="old_password" id="old_pass" required>
+        <span class="material-icons toggle-eye" onclick="toggleSinglePass('old_pass', this)">visibility_off</span>
+        </div>
+
+        <label>New Password</label>
+        <div class="password-wrapper">
+        <input type="password" name="new_password" id="new_pass" onkeyup="checkRequirements()" required>
+        <span class="material-icons toggle-eye" onclick="toggleSinglePass('new_pass', this)">visibility_off</span>
+        </div>
+
+        <label>Confirm New Password</label>
+        <div class="password-wrapper">
+        <input type="password" name="confirm_password" id="confirm_pass" onkeyup="checkMatch()" required>
+        <span class="material-icons toggle-eye" onclick="toggleSinglePass('confirm_pass', this)">visibility_off</span>
+    </div>
+        <button type="submit" name="change_password" class="btn-save" style="background-color: #48327a;">Change Account Password</button>
+    </form>
+    </div>
 
 <script>
-/**
- * Stricter validation:
- * 1. Checks if the last character entered is not a number.
- * 2. If it's an alphabet/symbol, show an alert.
- * 3. Immediately removes the invalid character.
- */
+
 function validatePhoneOnly() {
     const phoneInput = document.getElementById('phone_input');
     const regex = /[^0-9]/g;
@@ -227,14 +229,16 @@ function validatePhoneOnly() {
     }
 }
 
-function toggleProfilePasswords() {
-    var ids = ["old_pass", "new_pass", "confirm_pass"];
-    ids.forEach(function(id) {
-        var field = document.getElementById(id);
-        if (field) {
-            field.type = (field.type === "password") ? "text" : "password";
-        }
-    });
+function toggleSinglePass(fieldId, iconElement) {
+    const passwordField = document.getElementById(fieldId);
+    
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        iconElement.textContent = "visibility"; // Changes icon to open eye
+    } else {
+        passwordField.type = "password";
+        iconElement.textContent = "visibility_off"; // Changes icon to slashed eye
+    }
 }
 </script>
 
