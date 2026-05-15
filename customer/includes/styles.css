@@ -427,3 +427,21 @@ input[type="checkbox"] {
     margin-bottom: 20px;
     align-self: left;
 }
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.password-wrapper input {
+    width: 100%;
+    padding-right: 40px; /* Leave space for the icon */
+}
+.toggle-eye {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    color: #666;
+    user-select: none;
+}
