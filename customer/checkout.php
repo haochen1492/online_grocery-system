@@ -121,13 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                         }
 
                         // deactivated cart items
-                        $stmt_deactivate = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND active = 1");
-                        $stmt_deactivate->bind_param("i", $customer_id);
-                        $stmt_deactivate->execute();
-                        $stmt_deactivate->close();
+                        if (!empty($selected_ids)) {
+                            $placeholders = implode(',', array_fill(0, count($selected_ids), '?'));
+                            $stmt_deact = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND product_id IN ($placeholders)");
+                            $types = "i" . str_repeat('i', count($selected_ids));
+                            $stmt_deact->bind_param($types, $customer_id, ...$selected_ids);
+                            $stmt_deact->execute();
+                        }
 
                         // clear session cart and redirect
                         unset($_SESSION['cart']);
+                        unset($_SESSION['checkout_final_items']);
                         header('Location: order_confirmation.php');
                         exit;
 
@@ -138,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             } else {
                 $error = "Invalid payment method selected.";
             }
+
        }
 }
 

@@ -93,81 +93,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
 </head>
 <body>
 <?php include 'includes/header.php'; ?>
-<div class="cart-container"> 
-    <h2>Shopping Cart</h2>
+    <div class="cart-container"> 
+        <h2>Shopping Cart</h2>
 
-    <?php if (empty($_SESSION['cart'])): ?>
-        <p class="empty-msg">Your cart is empty. <a href="products.php">Go shopping!</a></p>
-    <?php else: ?>
-        <form action="checkout.php" method="POST" id="cart-form">
-            <?php foreach ($_SESSION['cart'] as $id => $quantity): 
-                if (isset($products[$id])):
-                    $item = $products[$id];
-                    $subtotal = $item['price'] * $quantity;
-                    $total += $subtotal;
-            ?>
-                <div class="cart-item">
-                    <div class="item-selection" style="margin-right: 15px;">
-                        <input type="checkbox" class="cart-checkbox" data-id="<?php echo $id; ?>" name="selected_items[]" value="<?php echo $id; ?>" <?php echo ($item['selected'] == 1) ? 'checked' : ''; ?>>
-                    </div>
 
-                    <div class="item-details">
-                        <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" class="item-image" style="width: 100px; height: 100px; object-fit: cover; margin-right: 20px;">
-                        <div>
-                            <h4><?php echo htmlspecialchars($item['name']); ?></h4>
-                            <div class="qty-controls">
-                                <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=decrease" class="qty-btn">-</a>
-                                <span class="qty-number"><?php echo $quantity; ?></span>
-                                <?php if ($quantity < $item['stock_quantity']): ?>
-                                    <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=increase" class="qty-btn">+</a>
-                                <?php else: ?>
-                                    <span class="qty-btn" style="background:#ccc; cursor:not-allowed;">+</span>
-                                    <br><small style="color:red;">Max Stock Reached</small>
-                                <?php endif; ?>
-                                <small> x RM<?php echo number_format($item['price'], 2); ?></small>
+        <?php if (empty($_SESSION['cart'])): ?>
+            <p class="empty-msg">Your cart is empty. <a href="products.php">Go shopping!</a></p>
+        <?php else: ?>
+            <form action="checkout.php" method="POST" id="cart-form">
+                <?php foreach ($_SESSION['cart'] as $id => $quantity): 
+                    if (isset($products[$id])):
+                        $item = $products[$id];
+                        $subtotal = $item['price'] * $quantity;
+                        $total += $subtotal;
+                ?>
+                    <div class="cart-item">
+                        <div class="item-selection" style="margin-right: 15px;">
+                            <input type="checkbox" class="cart-checkbox" data-id="<?php echo $id; ?>" name="selected_items[]" value="<?php echo $id; ?>" <?php echo ($item['selected'] == 1) ? 'checked' : ''; ?>>
+                        </div>
+
+                        <div class="item-details">
+                            <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" class="item-image" style="width: 100px; height: 100px; object-fit: cover; margin-right: 20px;">
+                            <div>
+                                <h4><?php echo htmlspecialchars($item['name']); ?></h4>
+                                <div class="qty-controls">
+                                    <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=decrease" class="qty-btn">-</a>
+                                    <span class="qty-number"><?php echo $quantity; ?></span>
+                                    <?php if ($quantity < $item['stock_quantity']): ?>
+                                        <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=increase" class="qty-btn">+</a>
+                                    <?php else: ?>
+                                        <span class="qty-btn" style="background:#ccc; cursor:not-allowed;">+</span>
+                                        <br><small style="color:red;">Max Stock Reached</small>
+                                    <?php endif; ?>
+                                    <small> x RM<?php echo number_format($item['price'], 2); ?></small>
+                                </div>
                             </div>
                         </div>
+                        <div class="item-actions">
+                            <strong class="item-subtotal" data-price="<?php echo $item['price'] * $quantity; ?>">RM<?php echo number_format($subtotal, 2); ?></strong>
+                            <br>
+                            <a href="cart.php?remove=<?php echo $id; ?>" class="remove-btn">Remove</a>
+                        </div>
                     </div>
-                    <div class="item-actions">
-                        <strong>RM<?php echo number_format($subtotal, 2); ?></strong>
-                        <br>
-                        <a href="cart.php?remove=<?php echo $id; ?>" class="remove-btn">Remove</a>
+                <?php endif; endforeach; ?>
+
+                <div class="cart-summary">
+                    <h3>Total (All Selected Items): RM<span id="dynamic-total"><?php echo number_format($total, 2); ?></span></h3>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="submit" name="remove_selected" class="btn-secondary" style="background-color: #e74c3c;" onclick="changeAction('cart.php')">Remove Selected</button>
+                        <button type="submit" name="proceed_to_checkout" class="checkout-btn" onclick="changeAction('checkout.php')">Checkout Selected</button>
                     </div>
                 </div>
-            <?php endif; endforeach; ?>
+            </form>
+        <?php endif; ?>
+    </div>
 
-            <div class="cart-summary">
-                <h3>Total (All Items): RM<?php echo number_format($total, 2); ?></h3>
-                
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="submit" name="remove_selected" class="btn-secondary" style="background-color: #e74c3c;" onclick="changeAction('cart.php')">Remove Selected</button>
-                    <button type="submit" name="proceed_to_checkout" class="checkout-btn" onclick="changeAction('checkout.php')">Checkout Selected</button>
-                </div>
-            </div>
-        </form>
-    <?php endif; ?>
-</div>
+    <script>
+        // Function to change form action based on which button is clicked
+        function changeAction(url) {
+            document.getElementById('cart-form').action = url;
+        }
 
-<script>
-// function to change form action based on which button is clicked
-function changeAction(url) {
-    document.getElementById('cart-form').action = url;
-}
+        // Function to calculate and display the total based on checked items
+        function updateDynamicTotal() {
+            let newTotal = 0;
+            // Look at every checkbox that is currently checked
+            document.querySelectorAll('.cart-checkbox:checked').forEach(checkbox => {
+                const row = checkbox.closest('.cart-item');
+                const subtotalElement = row.querySelector('.item-subtotal');
+                // Get the price directly from the data attribute
+                const price = parseFloat(subtotalElement.getAttribute('data-price'));
+                newTotal += price;
+            });
+            // Update the total display
+            document.getElementById('dynamic-total').innerText = newTotal.toFixed(2);
+        }
 
-document.querySelectorAll('.cart-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        const productId = this.getAttribute('data-id');
-        const isChecked = this.checked ? 1 : 0;
+        // Attach a single listener to all checkboxes
+        document.querySelectorAll('.cart-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateDynamicTotal(); // Update the UI immediately
 
-        // Send the status to the server without refreshing the page
-        fetch('update_selection.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `product_id=${productId}&is_selected=${isChecked}`
+                const productId = this.getAttribute('data-id');
+                const isChecked = this.checked ? 1 : 0;
+
+                // Sync with the database via update_selection.php
+                fetch('update_selection.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `product_id=${productId}&is_selected=${isChecked}`
+                });
+            });
         });
-    });
-});
-</script>
 
+        // Run once on page load to ensure total matches the database state
+        window.onload = updateDynamicTotal;
+    </script>
 </body>
 </html>
