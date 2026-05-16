@@ -40,7 +40,7 @@ if (isset($_POST['add_address'])) {
     $state = $_POST['state'];
     $postcode = $_POST['postal_code'];
 
-    $stmt = $conn->prepare("INSERT INTO addresses (customer_id, unit_no, address_line1, city, state, postal_code) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO addresses (customer_id, unit_no, street, city, state, postal_code) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("isssss", $user_id, $unit, $line1, $city, $state, $postcode);
     if ($stmt->execute()) {
         $message = "New address added!";
@@ -157,11 +157,13 @@ $user_data = $stmt->get_result()->fetch_assoc();
         
         while ($addr = $res->fetch_assoc()): ?>
             <div class="address-card">
-                <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, <?php echo htmlspecialchars($addr['address_id']); ?><br>
+                <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, <?php echo htmlspecialchars($addr['street']); ?><br>
                 <?php echo htmlspecialchars($addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
                 <form method="POST" style="position:absolute; right:10px; top:10px;">
                     <input type="hidden" name="address_id" value="<?php echo $addr['address_id']; ?>">
-                    <button type="submit" name="delete_address" style="background:none; border:none; color:red; cursor:pointer;"><span class="material-icons">delete</span></button>
+                    <button type="submit" name="delete_address" style="background: none; border: none; color: #d9534f; cursor: pointer; padding: 5px; display: flex; align-items: center;">
+                        <span class="material-icons" style="font-size: 24px;">delete</span>
+                    </button>
                 </form>
             </div>
         <?php endwhile; ?>
@@ -174,7 +176,27 @@ $user_data = $stmt->get_result()->fetch_assoc();
                 <input type="text" name="postal_code" placeholder="Postcode (e.g., 57000)" required style="width:30%;">
                 <input type="text" name="city" placeholder="City (e.g., Petaling Jaya)" required style="width:70%;">
             </div>
-            <input type="text" name="state" placeholder="State (e.g., Selangor)" required style="margin-bottom:10px; width:100%;">
+    <div class="row">
+        <div>
+            <select name="state" required style="width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                <option value="" <?php echo empty($current_data['state']) ? 'selected' : ''; ?> disabled>Choose your state...</option>
+                
+                <?php
+                // The 13 States + 3 Federal Territories
+                $states = [
+                    "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", 
+                    "Pahang", "Penang", "Perak", "Perlis", "Sabah", 
+                    "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", 
+                    "Labuan", "Putrajaya"
+                ];
+                foreach ($states as $state) {
+                    // If the customer has a matching state saved, select it automatically
+                    $selected = (isset($current_data['state']) && $current_data['state'] == $state) ? "selected" : "";
+                    echo "<option value=\"$state\" $selected>$state</option>";
+                }
+                ?>
+            </select>
+        </div>
             <button type="submit" name="add_address" class="btn-save" style="background:#007bff;">Save Address</button>
         </form>
     </div>
