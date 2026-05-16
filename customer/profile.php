@@ -157,9 +157,11 @@ $user_data = $stmt->get_result()->fetch_assoc();
         
         while ($addr = $res->fetch_assoc()): ?>
             <div class="address-card">
-                <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, <?php echo htmlspecialchars($addr['street']); ?><br>
-                <?php echo htmlspecialchars($addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
-                <form method="POST" style="position:absolute; right:10px; top:10px;">
+                <div class="address-details" style="flex-grow: 1; padding-right: 15px;">
+                    <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, <?php echo htmlspecialchars($addr['street']); ?><br>
+                    <?php echo htmlspecialchars($addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
+                </div>
+                <form method="POST" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('Are you sure you want to remove this address?');">
                     <input type="hidden" name="address_id" value="<?php echo $addr['address_id']; ?>">
                     <button type="submit" name="delete_address" style="background: none; border: none; color: #d9534f; cursor: pointer; padding: 5px; display: flex; align-items: center;">
                         <span class="material-icons" style="font-size: 24px;">delete</span>
