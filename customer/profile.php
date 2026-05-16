@@ -168,13 +168,13 @@ $user_data = $stmt->get_result()->fetch_assoc();
 
         <h4 style="margin-top:20px;">Add New Address</h4>
         <form method="POST">
-            <input type="text" name="unit_no" placeholder="Unit/House No" required style="margin-bottom:5px; width:100%;">
-            <input type="text" name="address_line1" placeholder="Street Name" required style="margin-bottom:5px; width:100%;">
+            <input type="text" name="unit_no" placeholder="House No./Unit No./Block (e.g., Block A, 02-03 or No. 123)" required style="margin-bottom:5px; width:100%;">
+            <input type="text" name="address_line1" placeholder="Street Name (e.g., Lorong X/XX, Bandar Sunway)" required style="margin-bottom:5px; width:100%;">
             <div style="display:flex; gap:5px; margin-bottom:5px;">
-                <input type="text" name="postal_code" placeholder="Postcode" required style="width:30%;">
-                <input type="text" name="city" placeholder="City" required style="width:70%;">
+                <input type="text" name="postal_code" placeholder="Postcode (e.g., 57000)" required style="width:30%;">
+                <input type="text" name="city" placeholder="City (e.g., Petaling Jaya)" required style="width:70%;">
             </div>
-            <input type="text" name="state" placeholder="State" required style="margin-bottom:10px; width:100%;">
+            <input type="text" name="state" placeholder="State (e.g., Selangor)" required style="margin-bottom:10px; width:100%;">
             <button type="submit" name="add_address" class="btn-save" style="background:#007bff;">Save Address</button>
         </form>
     </div>

@@ -216,9 +216,9 @@ $address_result = $stmt_addr->get_result();
         <div id="address-form-wrapper" style="display: none;" class="address-entry-box">
             <h4>Add New Address</h4>
             <div id="addressInputs">
-                <input type="text" id="unit_no" placeholder="Unit/Block" required>
-                <input type="text" id="street" placeholder="Street Name" required>
-                <input type="text" id="city" placeholder="City" required>
+                <input type="text" id="unit_no" placeholder="House No./Unit No./Block (e.g., Block A, 02-03 or No. 123)" required>
+                <input type="text" id="street" placeholder="Street Name (e.g., Lorong X/XX, Bandar Sunway)" required>
+                <input type="text" id="city" placeholder="City (e.g., Petaling Jaya)" required>
                 <select name="state" id="state" required>
                     <option value="">-- Select State --</option>
                     <option value="Johor">Johor</option>
@@ -235,7 +235,7 @@ $address_result = $stmt_addr->get_result();
                     <option value="Selangor">Selangor</option>
                     <option value="Terengganu">Terengganu</option>
                 </select>
-                <input type="text" id="postal_code" placeholder="Postal Code" required>
+                <input type="text" id="postal_code" placeholder="Postal Code (e.g., 57000)" required>
                 <div style="display:flex; gap:10px;">
                     <button type="button" class="btn-secondary" onclick="saveNewAddress()">Save Address</button>
                     <button type="button" onclick="document.getElementById('address-form-wrapper').style.display='none'">Cancel</button>
