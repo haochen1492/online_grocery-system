@@ -38,14 +38,38 @@ $featured_result = $conn->query($featured_query);
             gap: 20px;
             padding: 20px;
         }
-        .card {
-            width: 250px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            text-align: center;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        .product-card { 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            padding: 15px; 
+            text-align: center; 
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
+        .product-card:hover{
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .product-card img { 
+            width: 100%; 
+            height: 180px; 
+            object-fit: contain; 
+            margin-bottom: 15px; 
+        }
+        .product-name { 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            margin: 10px 0; 
+        }
+        .product-price { 
+            color: #329b18; 
+            font-weight: bold; 
+            font-size: 1.2em; 
+        }
+        
+        .stock-label { font-size: 0.85em; color: #777; margin-bottom: 15px; }
         .btn {
             display: inline-block;
             background: #329b18;
@@ -74,7 +98,7 @@ $featured_result = $conn->query($featured_query);
 <h2 style="text-align:center; margin-top:30px;">Featured Products</h2>
 <div class="product-grid">
     <?php while($row = $featured_result->fetch_assoc()): ?>
-        <div class="card">
+        <div class="product-card" onclick="window.location.href='product_detail.php?product_id=<?php echo $row['product_id']; ?>'">
             <img src="../admin/products/<?php echo $row['product_image']; ?>" style="width:100%; height:150px; object-fit:contain;">
             <h4><?php echo htmlspecialchars($row['name']); ?></h4>
             <p>RM <?php echo number_format($row['price'], 2); ?></p>
@@ -97,6 +121,7 @@ function showSlides(n) {
 }
 // Auto slide every 5 seconds
 setInterval(() => { plusSlides(1); }, 5000);
+
 </script>
 </body>
 </html>
