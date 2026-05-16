@@ -7,7 +7,7 @@ $cat_query = "SELECT * FROM categories";
 $cat_result = $conn->query($cat_query);
 
 // check if a specific category was clicked
-$category_id = isset($_GET['category']) ? $_GET['category'] : null;
+$category_id = isset($_GET['category_id']) ? $_GET['category_id'] : null;
 
 // prepare the product query based on the filter
 if ($category_id) {
@@ -96,9 +96,9 @@ if ($category_id) {
 
     <!-- category filter menu -->
     <div class="filter-menu">
-        <a href="product.php" class="<?php echo !$category_id ? 'active' : ''; ?>">All Categories</a>
+        <a href="products.php" class="<?php echo !$category_id ? 'active' : ''; ?>">All Categories</a>
         <?php while($cat = $cat_result->fetch_assoc()): ?>
-            <a href="product.php?category=<?php echo $cat['category_id']; ?>" 
+            <a href="products.php?category_id=<?php echo $cat['category_id']; ?>" 
                class="<?php echo $category_id == $cat['category_id'] ? 'active' : ''; ?>">
                 <?php echo htmlspecialchars($cat['category_name']); ?>
             </a>

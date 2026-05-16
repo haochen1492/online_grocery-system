@@ -397,7 +397,6 @@ th {
     font-weight: bold;
     color: #333;
     background: #fff;
-    -moz-appearance: textfield;
 }
 
 .quantity-modifier-box input::-webkit-outer-spin-button,
