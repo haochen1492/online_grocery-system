@@ -60,7 +60,7 @@ if (isset($_POST['subforgot'])) {
                 
                 $reset_link = "http://localhost/online_grocery-system/customer/password_reset.php?token=" . $token;                
                 $mail->Body    = "<h3>You have requested a password reset</h3>
-                                  <p>Click the link below to reset your passwor:</p>
+                                  <p>Click the link below to reset your password:</p>
                                   <p><a href='".$reset_link."'>".$reset_link."</a></p>
                                   <br><br>
                                   <hr>
