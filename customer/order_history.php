@@ -96,17 +96,22 @@ $stmt->close();
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="4">
-                            <ul style="list-style: none; padding-left: 20px; font-size: 14px;">
+                        <td colspan="5" style="padding: 10px 20px;">
+                            <div class="history-items-wrapper">
                                 <?php foreach ($order['items'] as $item): ?>
-                                    <li>
-                                        <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" style="width: 70px; height: 70px; margin-right: 10px;">
-                                        • <?php echo htmlspecialchars($item['name']); ?> 
-                                        (x<?php echo $item['quantity']; ?>) - 
-                                        RM<?php echo number_format($item['product_price'], 2); ?>
-                                    </li>
+                                    <div class="history-item-row">
+                                        <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="history-item-image">
+                                        <div class="history-item-meta">
+                                            <span class="history-item-name"><?php echo htmlspecialchars($item['name']); ?></span>
+                                            <span class="history-item-qty">Quantity: <strong><?php echo $item['quantity']; ?></strong></span>
+                                        </div>
+                                        <div class="history-item-price">
+                                            RM<?php echo number_format($item['product_price'] * $item['quantity'], 2); ?>
+                                            <small style="display: block; color: #777; font-weight: normal;">(RM<?php echo number_format($item['product_price'], 2); ?> each)</small>
+                                        </div>
+                                    </div>
                                 <?php endforeach; ?>
-                            </ul>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

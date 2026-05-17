@@ -108,12 +108,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
                         $total += $subtotal;
                 ?>
                     <div class="cart-item">
-                        <div class="item-selection" style="margin-right: 15px;">
+                        <div class="item-selection">
                             <input type="checkbox" class="cart-checkbox" data-id="<?php echo $id; ?>" name="selected_items[]" value="<?php echo $id; ?>" <?php echo ($item['selected'] == 1) ? 'checked' : ''; ?>>
                         </div>
 
                         <div class="item-details">
-                            <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" class="item-image" style="width: 100px; height: 100px; object-fit: cover; margin-right: 20px;">
+                            <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" class="item-image">
                             <div>
                                 <h4><?php echo htmlspecialchars($item['name']); ?></h4>
                                 <div class="qty-controls">
@@ -122,8 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
                                     <?php if ($quantity < $item['stock_quantity']): ?>
                                         <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=increase" class="qty-btn">+</a>
                                     <?php else: ?>
-                                        <span class="qty-btn" style="background:#ccc; cursor:not-allowed;">+</span>
-                                        <br><small style="color:red;">Max Stock Reached</small>
+                                        <span class="qty-btn">+</span>
+                                        <br><small>Max Stock Reached</small>
                                     <?php endif; ?>
                                     <small> x RM<?php echo number_format($item['price'], 2); ?></small>
                                 </div>
@@ -140,8 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
                 <div class="cart-summary">
                     <h3>Total (All Selected Items): RM<span id="dynamic-total"><?php echo number_format($total, 2); ?></span></h3>
                     
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="submit" name="remove_selected" class="btn-secondary" style="background-color: #e74c3c;" onclick="changeAction('cart.php')">Remove Selected</button>
+                    <div>
+                        <button type="submit" name="remove_selected" class="btn-secondary" onclick="changeAction('cart.php')">Remove Selected</button>
                         <button type="submit" name="proceed_to_checkout" class="checkout-btn" onclick="changeAction('checkout.php')">Checkout Selected</button>
                     </div>
                 </div>

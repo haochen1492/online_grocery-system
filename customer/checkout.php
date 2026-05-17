@@ -169,48 +169,79 @@ $address_result = $stmt_addr->get_result();
         <button type="button" class="btn-secondary" onclick="window.location.href='cart.php'">← Back to Cart</button>
 
         <form method="POST" action="checkout.php">
-            <h3>Review Your Items</h3>
-            <div class="cart-preview">
-                <?php foreach ($cart_items as $item): ?>
-                    <div class="cart-preview-item">
-                        <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="preview-image" style="width: 80px; height: 80px; object-fit: cover; margin-right: 20px;">
-                        <span><?php echo htmlspecialchars($item['name']); ?> (x<?php echo $_SESSION['cart'][$item['product_id']]; ?>)</span>
-                        <span>RM<?php echo number_format($item['price'] * $_SESSION['cart'][$item['product_id']], 2); ?></span>
+            <div class="checkout-layout-grid">
+                
+                <div class="checkout-main-col">
+                    <div class="checkout-section-card">
+                        <h3>Review Your Items</h3>
+                        <div class="cart-preview">
+                            <?php foreach ($cart_items as $item): ?>
+                                <div class="cart-preview-item">
+                                    <img src="../admin/products/<?php echo htmlspecialchars($item['product_image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="preview-image">
+                                    <div class="preview-item-meta">
+                                        <span class="preview-item-name"><?php echo htmlspecialchars($item['name']); ?></span>
+                                        <span class="preview-item-qty">Quantity: <?php echo $_SESSION['cart'][$item['product_id']]; ?></span>
+                                    </div>
+                                    <span class="preview-item-price">RM<?php echo number_format($item['price'] * $_SESSION['cart'][$item['product_id']], 2); ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
 
-            <h3>Shipping Address</h3>
-            <div id="saved-addresses">
-                <?php if ($address_result->num_rows > 0): ?>
-                    <?php while ($addr = $address_result->fetch_assoc()): ?>
-                        <label class="address-radio">
-                            <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>" required>
-                            <?php echo htmlspecialchars($addr['unit_no'] . ", " . $addr['street'] . ", " . $addr['postal_code'] ." ". $addr['city'] . ", " . $addr['state']); ?>
-                        </label>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <p>No addresses found.</p>
-                <?php endif; ?>
-                <button type="button" onclick="showAddressForm()">+ Add New Address</button>
-            </div>
+                    <div class="checkout-section-card">
+                        <h3>Shipping Address</h3>
+                        <div id="saved-addresses" class="address-selection-group">
+                            <?php if ($address_result->num_rows > 0): ?>
+                                <?php while ($addr = $address_result->fetch_assoc()): ?>
+                                    <label class="address-radio-card">
+                                        <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>" required>
+                                        <div class="address-text-details">
+                                            <?php echo htmlspecialchars($addr['unit_no'] . ", " . $addr['street'] . ", " . $addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
+                                        </div>
+                                    </label>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <p style="color: #777; margin-bottom: 15px;">No addresses found in your profile.</p>
+                            <?php endif; ?>
+                            <button type="button" class="btn-add-address" onclick="showAddressForm()">+ Add New Address</button>
+                        </div>
+                    </div>
+                </div>
 
-            <h3>Payment & Finalize</h3>
-            <div class="price-summary">
-                <p>Subtotal: <span>RM<?php echo number_format($totalAmount, 2); ?></span></p>
-                <p>Shipping: <span>RM<?php echo number_format($shippingFee, 2); ?></span></p>
-                <p class="grand-total">Grand Total: <span>RM<?php echo number_format($grandTotal, 2); ?></span></p>
+                <div class="checkout-side-col">
+                    <div class="checkout-section-card summary-sticky-card">
+                        <h3>Order Summary</h3>
+                        <div class="price-summary-box">
+                            <div class="summary-line">
+                                <span>Subtotal</span>
+                                <span>RM<?php echo number_format($totalAmount, 2); ?></span>
+                            </div>
+                            <div class="summary-line">
+                                <span>Shipping Fee</span>
+                                <span>RM<?php echo number_format($shippingFee, 2); ?></span>
+                            </div>
+                            <hr class="summary-divider">
+                            <div class="summary-line grand-total-line">
+                                <span>Grand Total</span>
+                                <span class="grand-total-amount">RM<?php echo number_format($grandTotal, 2); ?></span>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-selection-box" style="margin-top: 20px;">
+                            <label for="payment_method" style="margin-top: 0; margin-bottom: 8px;">Payment Method:</label>
+                            <select name="payment_method" id="payment_method" required>
+                                <option value="">-- Select Method --</option>
+                                <option value="Credit/Debit Card">Credit/Debit Card</option>
+                                <option value="Cash On Delivery">Cash on Delivery</option>
+                                <option value="Touch 'n Go E-Wallet">Touch 'n Go E-Wallet</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" name="place_order" class="place-order-btn" style="width: 100%; margin-top: 20px;">Place Order</button>
+                    </div>
+                </div>
+
             </div>
-            
-            <label for="payment_method">Payment Method:</label>
-            <select name="payment_method" id="payment_method" required>
-                <option value="">-- Select Method --</option>
-                <option value="Credit/Debit Card">Credit/Debit Card</option>
-                <option value="Cash On Delivery">Cash on Delivery</option>
-                <option value="Touch 'n Go E-Wallet">Touch 'n Go E-Wallet</option>
-            </select>
-            
-            <button type="submit" name="place_order" class="place-order-btn">Place Order</button>
         </form>
 
         <div id="address-modal-overlay" class="address-modal-overlay">
