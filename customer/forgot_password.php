@@ -1,8 +1,9 @@
 <?php 
+// 1. Link to your project's connection file
 include '../includes/dbconnect.php';
 session_start();
 
-// If already logged in, send them away
+// Redirect away if already logged in (Matches your login.php logic)
 if (isset($_SESSION['customer_id'])) {
     header("Location: index.php"); 
     exit();
@@ -14,54 +15,70 @@ $message_type = "";
 if (isset($_POST['subforgot'])) {
     $email = $_POST['login_var'];
 
-    // 1. Check if the email exists in customers table
+    // 2. Object-Oriented Prepared Statement targeting your 'customers' table
     $stmt = $conn->prepare("SELECT customer_email FROM customers WHERE customer_email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $res = $stmt->get_result();
 
     if ($res->num_rows === 1) {
-        // Generate secure token
+        // Securely generate a reset token
         $token = bin2hex(random_bytes(50));
 
-        // 2. Insert token into pass_reset table
+        // 3. Insert into token validation tracking table
         $ins_stmt = $conn->prepare("INSERT INTO pass_reset (email, token) VALUES (?, ?)");
         $ins_stmt->bind_param("ss", $email, $token);
         
         if ($ins_stmt->execute()) {
-            // 3. Email Configurations
-            $FromName = "Infinity Grocer";
-            $FromEmail = "no_reply@infinitygrocer.com";
-            $ReplyTo = "support@infinitygrocer.com";
-            $credits = "All rights reserved | Infinity Grocer"; 
             
-            $headers  = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type: text/html; charset=iso-8859-1\r\n";
-            $headers .= "From: ".$FromName." <".$FromEmail.">\r\n";
-            $headers .= "Reply-To: ".$ReplyTo."\r\n";
-            $headers .= "X-Mailer: PHP/" . phpversion();
-            
-            $subject = "Password Reset Request - Infinity Grocer"; 
-            
-            // Adjust the URL path if your directory setup differs on localhost
-            $reset_link = "http://localhost/php/password_reset.php?token=" . $token;
-            
-            $msg = "<h3>You have requested a password reset</h3>
-                    <p>Click the link below to reset your password:</p>
-                    <p><a href='".$reset_link."'>".$reset_link."</a></p>
-                    <br><br>
-                    <hr>
-                    <center>".$credits."</center>"; 
+            // ==========================================
+            // NEW FIX: FIXED LOCAL MAIL VIA PHPMAILER
+            // ==========================================
+            require 'PHPMailer/Exception.php';
+            require 'PHPMailer/PHPMailer.php';
+            require 'PHPMailer/SMTP.php';
 
-            // 4. Send the mail
-            if (@mail($email, $subject, $msg, $headers)) {
+            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
+            try {
+                // Server configurations settings
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';               // Using Gmail standard server
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'angqiyang2006@gmail.com';     // CHANGE THIS to your Gmail address
+                $mail->Password   = 'nmql tzth fzpl gpey';          // CHANGE THIS to your 16-character Google App Password
+                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                // Recipients routing metadata
+                $mail->setFrom('no_reply@infinitygrocer.com', 'Infinity Grocer');
+                $mail->addAddress($email); 
+
+                // Email layout HTML content
+                $mail->isHTML(true);
+                $mail->Subject = 'Password Reset Request - Infinity Grocer';
+                
+                $reset_link = "http://localhost/online_grocery-system/customer/password_reset.php?token=" . $token;                
+                $mail->Body    = "<h3>You have requested a password reset</h3>
+                                  <p>Click the link below to reset your passwor:</p>
+                                  <p><a href='".$reset_link."'>".$reset_link."</a></p>
+                                  <br><br>
+                                  <hr>
+                                  <center>All rights reserved | Infinity Grocer</center>";
+
+                $mail->send();
+                
                 $message = "A reset link has been sent to your registered email address. Please check your inbox.";
                 $message_type = "alert-success";
                 $hide = true;
-            } else {
-                $message = "The server failed to send the email. Please try again later.";
+
+            } catch (Exception $e) {
+                // Capture details if something structural fails (e.g., wrong credential variables)
+                $message = "The server failed to send the email. Mailer Error: {$mail->ErrorInfo}";
                 $message_type = "alert-error";
             }
+            // ==========================================
+            
         } else {
             $message = "Something went wrong database-side. Please try again.";
             $message_type = "alert-error";
