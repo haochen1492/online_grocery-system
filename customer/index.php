@@ -39,6 +39,7 @@ $featured_result = $conn->query($featured_query);
             padding: 20px;
         }
         .product-card { 
+            width: 230px;
             border: 1px solid #eee; 
             border-radius: 10px; 
             padding: 15px; 
@@ -102,7 +103,7 @@ $featured_result = $conn->query($featured_query);
             <img src="../admin/products/<?php echo $row['product_image']; ?>" style="width:100%; height:150px; object-fit:contain;">
             <h4><?php echo htmlspecialchars($row['name']); ?></h4>
             <p>RM <?php echo number_format($row['price'], 2); ?></p>
-            <a href="product_details.php?product_id=<?php echo $row['product_id']; ?>" class="btn">View Items</a>
+            <!--<a href="product_details.php?product_id=<?php echo $row['product_id']; ?>" class="btn">View Items</a>-->
         </div>
     <?php endwhile; ?>
 </div>

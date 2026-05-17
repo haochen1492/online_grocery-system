@@ -120,7 +120,7 @@ if ($category_id) {
                     <div class="product-price">RM <?php echo number_format($row['price'], 2); ?></div>
                     <div class="stock-label">Availability: <?php echo $row['stock_quantity']; ?> in stock</div>
                     
-                    <a href="add_to_cart.php?id=<?php echo $row['product_id']; ?>" class="btn-cart">Add to Cart</a>
+                    <!--<a href="add_to_cart.php?id=<?php echo $row['product_id']; ?>" class="btn-cart">Add to Cart</a>-->
                 </div>
             <?php endwhile; ?>
         <?php else: ?>
