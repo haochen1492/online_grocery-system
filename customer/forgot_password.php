@@ -43,10 +43,10 @@ if (isset($_POST['subforgot'])) {
             try {
                 // Server configurations settings
                 $mail->isSMTP();
-                $mail->Host       = 'smtp.gmail.com';               // Using Gmail standard server
+                $mail->Host       = 'smtp.gmail.com';  
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'angqiyang2006@gmail.com';     // CHANGE THIS to your Gmail address
-                $mail->Password   = 'nmql tzth fzpl gpey';          // CHANGE THIS to your 16-character Google App Password
+                $mail->Username   = 'angqiyang2006@gmail.com';     
+                $mail->Password   = 'nmql tzth fzpl gpey';         
                 $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
