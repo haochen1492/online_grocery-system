@@ -105,6 +105,13 @@ CREATE TABLE IF NOT EXISTS cart (
     selected boolean not null default true
 );
 
+CREATE TABLE IF NOT EXISTS `pass_reset` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `email` VARCHAR(255) NOT NULL,
+  `token` VARCHAR(255) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) AFTER total_price;
 
 ALTER TABLE cart ADD COLUMN selected boolean NOT NULL DEFAULT true AFTER active;

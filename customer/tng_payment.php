@@ -85,10 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="includes/styles.css">
 </head>
 <body>
-    <div class="payment-container">
+    <div class="tng-payment-container">
     <h2>Touch 'n Go E-Wallet Payment</h2>
     <p>Complete your purchase using your Touch 'n Go E-Wallet.</p>
-    <form method="POST" class="payment-form">
+    <form method="POST" class="payment-form" onsubmit="return validateTngForm(event)">
         <div class="tng">
             <table>
                 <tr><td>Payment to Infinity Grocer</td></tr>
@@ -100,31 +100,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="tng-login">
             <h2>Login</h2>
-            <input type="tel" name="phone_number" id="phone_number" placeholder="Enter Phone Number" required>
+            <input type="tel" name="phone_number" id="phone_number" placeholder="Enter Phone Number" maxlength="11">
             <p>6-digit PIN</p>
-            <input type="password" name="tng_pin" id="tng_pin" placeholder="Enter TNG PIN" required>
+            <input type="password" name="tng_pin" id="tng_pin" placeholder="Enter TNG PIN" maxlength="6">
         </div>
-        <button type="submit" class="pay-btn">Pay Now</button>
+        <button type="submit" class="tng-pay-btn">Pay Now</button>
     </form>
     </div>
-</body>
-</html>
 <script>
     // Basic client-side validation for TnG E-Wallet payment form
-    document.querySelector('.payment-form').addEventListener('submit', function(e) {
-        const phoneInput = document.getElementById('phone_number');
-        const pinInput = document.getElementById('tng_pin');
+    function validateTngForm(e) {
+        const phoneInput = document.getElementById('phone_number').value;
+        const pinInput = document.getElementById('tng_pin').value;
 
-        if (!/^\d{10,11}$/.test(phoneInput.value)) {
-            alert('Please enter a valid phone number (9-10 digits).');
+        if (!/^01\d{9,10}$/.test(phoneInput) ) {
+            alert('Please enter a valid Malaysian phone number starting with 01 and should be 10 or 11 digits (e.g., 0123456789).');
             e.preventDefault();
-            return;
+            return false;
         }
 
-        if (!/^\d{6}$/.test(pinInput.value)) {
+        if (!/^\d{6}$/.test(pinInput)) {
             alert('Please enter a valid 6-digit TNG PIN.');
             e.preventDefault();
-            return;
+            return false;
         }
-    });
+        return true;
+    }
 </script>
+</body>
+</html>

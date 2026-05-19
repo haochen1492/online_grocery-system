@@ -141,8 +141,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
                     <h3>Total (All Selected Items): RM<span id="dynamic-total"><?php echo number_format($total, 2); ?></span></h3>
                     
                     <div>
-                        <button type="submit" name="remove_selected" class="btn-secondary" onclick="changeAction('cart.php')">Remove Selected</button>
-                        <button type="submit" name="proceed_to_checkout" class="checkout-btn" onclick="changeAction('checkout.php')">Checkout Selected</button>
+                        <button type="submit" name="remove_selected" class="btn-secondary" onclick="changeAction(event, 'cart.php')">Remove Selected</button>
+                        <button type="submit" name="proceed_to_checkout" class="checkout-btn" onclick="changeAction(event, 'checkout.php')">Checkout Selected</button>
                     </div>
                 </div>
             </form>
@@ -151,8 +151,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
 
     <script>
         // Function to change form action based on which button is clicked
-        function changeAction(url) {
-            document.getElementById('cart-form').action = url;
+        function changeAction(event, url) {
+            // count how many checkboxes are currently checked
+            const checkedCount = document.querySelectorAll('.cart-checkbox:checked').length;
+            //if zero is checked, prevent form submission and alert customer
+            if (checkedCount === 0) {
+                event.preventDefault(); // Prevent form submission
+                alert('Please select at least one item to proceed.');
+                return false;
+            } else {
+                //proceed if item are selected
+                document.getElementById('cart-form').action = url; // Set the form action
+            }
         }
 
         // Function to calculate and display the total based on checked items
