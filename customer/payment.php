@@ -87,34 +87,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="includes/styles.css">
 </head>
 <body>
-    <div class="payment-container">
-    <h2>Credit Card Payment</h2>
-    <p>Enter your credit card details to complete your purchase.</p>
-    <form method="POST" class="payment-form">
-        <div class="form-group">
-            <label for="name_on_card">Name on Card: </label>
-            <input type="text" id="name_on_card" name="name_on_card" required>
+    <div class="payment-page-container">
+        <div class="payment-page-wrapper">
+            <h2>Credit/Debit Card Payment</h2>
+            <p>Enter your credit/debit card details to complete your purchase.</p>
+                <div class="payment-form-container">
+                    <form method="POST" class="payment-form" onsubmit="return validateCardForm(event)">
+                        <div class="form-group">
+                            <label for="name_on_card">Name on Card: </label>
+                            <input type="text" id="name_on_card" name="name_on_card">
+                        </div>
+                        <div class="form-group">
+                            <label for="card_number">Card Number: </label>
+                            <input type="text" id="card_number" name="card_number" maxlength="16">
+                        </div>
+                        <div class="form-group">
+                            <label for="expiry_date">Expiry Date (MM/YY): </label>
+                            <input type="text" id="expiry_date" name="expiry_date" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label for="cvv">CVV:  </label>
+                            <input type="text" id="cvv" name="cvv" maxlength="3">
+                        </div>
+                        <button type="submit" class="pay-btn">Pay Now</button>
+                    </form>
+                </div>
         </div>
-        <div class="form-group">
-            <label for="card_number">Card Number: </label>
-            <input type="text" id="card_number" name="card_number" required>
-        </div>
-        <div class="form-group">
-            <label for="expiry_date">Expiry Date (MM/YY): </label>
-            <input type="text" id="expiry_date" name="expiry_date" required>
-        </div>
-        <div class="form-group">
-            <label for="cvv">CVV:  </label>
-            <input type="text" id="cvv" name="cvv" required>
-        </div>
-        <button type="submit" class="pay-btn">Pay Now</button>
-    </form>
     </div>
-</body>
-</html>
 <script>
+    //auto format expiry date input
+    document.getElementById('expiry_date').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+        if (value.length > 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2, 4); // Insert slash after month
+        }
+        e.target.value = value;
+    });
     // Basic client-side validation for credit/debit card form
-    document.querySelector('.payment-form').addEventListener('submit', function(e) {
+    function validateCardForm(e) {
         // Basic validation for card number, expiry date, and CVV
         const cardNumber = document.getElementById('card_number').value;
         const expiryDate = document.getElementById('expiry_date').value;
@@ -123,19 +133,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!/^\d{16}$/.test(cardNumber)) {
             alert('Please enter a valid 16-digit card number.');
             e.preventDefault();
-            return;
+            return false;
         }
 
-        if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryDate)) {
             alert('Please enter a valid expiry date in MM/YY format.');
             e.preventDefault();
-            return;
+            return false;
         }
 
         if (!/^\d{3}$/.test(cvv)) {
             alert('Please enter a valid 3-digit CVV.');
             e.preventDefault();
-            return;
+            return false;
         }
-    });
+        return true;
+    }
 </script>
+</body>
+</html>

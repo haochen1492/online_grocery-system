@@ -81,6 +81,7 @@ label {
 input[type="text"], 
 input[type="email"], 
 input[type="password"], 
+input[type="tel"],
 select, 
 textarea {
     width: 100%;
@@ -715,4 +716,51 @@ th {
 .grand-total-amount {
     color: #329b18;
     font-size: 20px;
+}
+
+.payment-page-container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    box-sizing: border-box;
+}
+
+.tng-payment-container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.tng-logo {
+    width: 60px;
+    margin-bottom: 20px;
+}
+
+.tng-login {
+    text-align: left;
+}
+
+.tng-pay-btn {
+    background-color: #18469b;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: background 0.3s ease;
+}
+
+.tng-pay-btn:hover {
+    background-color: #0f2f66;
 }
