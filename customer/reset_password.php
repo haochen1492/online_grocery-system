@@ -27,6 +27,6 @@ if (isset($_GET['token'])) {
 
 <form method="POST">
     <h2>Create New Password</h2>
-    <input type="password" name="password" placeholder="New Password" required minlength="6">
+    <input type="password" name="password" placeholder="New Password" required minlength="15">
     <button type="submit">Update Password</button>
 </form>

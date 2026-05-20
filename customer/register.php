@@ -2,12 +2,21 @@
 include '../includes/dbconnect.php';
 session_start();
 
+// Import PHPMailer classes into the global namespace
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Adjust these paths based on where your PHPMailer files are located
+require '../vendor/phpmailer/Exception.php';
+require '../vendor/phpmailer/PHPMailer.php';
+require '../vendor/phpmailer/SMTP.php';
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
     $password = $_POST['password'];
-    $confirm_password = $_POST['confirm_password']; // New field[cite: 3]
+    $confirm_password = $_POST['confirm_password']; 
 
     // Password Complexity Checks
     $uppercase = preg_match('@[A-Z]@', $password);
@@ -24,13 +33,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     else if (!$uppercase || !$lowercase || !$specialChars || strlen($password) < 15) {
         $error = "Password does not meet security requirements.";
     }
-    else if ($password !== $confirm_password) { // Match Check
+    else if ($password !== $confirm_password) { 
         $error = "Passwords do not match!";
     }
     else {
         $password_hashed = password_hash($password, PASSWORD_DEFAULT);
 
-        // 2. Check if email exists[cite: 3, 6]
+        // 2. Check if email exists
         $check = $conn->prepare("SELECT customer_id FROM customers WHERE customer_email = ?");
         $check->bind_param("s", $email);
         $check->execute();
@@ -39,14 +48,60 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($check->num_rows > 0) {
             $error = "This email is already registered!";
         } else {
-            // 3. Insert into DB[cite: 3]
-            $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_email, customer_password, customer_phone) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $name, $email, $password_hashed, $phone);
-            
-            if ($stmt->execute()) {
-                header("Location: login.php?registration=success");
+            // Start transaction to ensure both DB insert and OTP creation succeed together
+            $conn->begin_transaction();
+
+            try {
+                // 3. Insert into DB (is_verified defaults to 0)
+                $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_email, customer_password, customer_phone, is_verified) VALUES (?, ?, ?, ?, 0)");
+                $stmt->bind_param("ssss", $name, $email, $password_hashed, $phone);
+                $stmt->execute();
+
+                // 4. Generate 6-Digit OTP
+                $otp_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+
+                // Save or Update OTP in register_verify table
+                $otp_stmt = $conn->prepare("INSERT INTO register_verify (email, otp_code) VALUES (?, ?) ON DUPLICATE KEY UPDATE otp_code = ?, created_at = CURRENT_TIMESTAMP");
+                $otp_stmt->bind_param("sss", $email, $otp_code, $otp_code);
+                $otp_stmt->execute();
+
+                // 5. Send OTP via PHPMailer
+                $mail = new PHPMailer(true);
+
+                // Server configurations
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'angqiyang2006@gmail.com';       
+                $mail->Password   = 'nmql tzth fzpl gpey'; 
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                // Recipients
+                $mail->setFrom('angqiyang2006@gmail.com', 'Infinity Grocer');
+                $mail->addAddress($email, $name);
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = 'Verify Your Infinity Grocer Account';
+                $mail->Body    = "<h3>Welcome to Infinity Grocer, $name!</h3>
+                                  <p>Your OTP code for verification is: <b>$otp_code</b></p>
+                                  <p>This code will expire shortly.</p>";
+
+                $mail->send();
+                
+                // Commit changes if everything went well
+                $conn->commit();
+
+                // Redirect to OTP Verification page
+                header("Location: verify_otp.php?email=" . urlencode($email));
                 exit();
-            } else {
+
+            } catch (Exception $e) {
+                $conn->rollback();
+                $error = "Failed to send verification email. Mailer Error: {$mail->ErrorInfo}";
+            } catch (Exception $e) {
+                $conn->rollback();
                 $error = "Registration failed. Please try again.";
             }
         }
@@ -111,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         <button type="submit" class="btn">Register</button>
     </form>
-        <p style="margin-top: 15px;">
+    <p style="margin-top: 15px;">
         Already a Infinity Grocer Member? <a href="login.php">Welcome Back, Log in</a>
     </p>
 </div>
@@ -120,13 +175,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 function checkRequirements() {
     var val = document.getElementById("regPassword").value;
     
-    // Check and update colors
     document.getElementById("len").className = val.length >= 15 ? "requirement valid" : "requirement";
     document.getElementById("upper").className = /[A-Z]/.test(val) ? "requirement valid" : "requirement";
     document.getElementById("lower").className = /[a-z]/.test(val) ? "requirement valid" : "requirement";
     document.getElementById("special").className = /[^\w]/.test(val) ? "requirement valid" : "requirement";
     
-    checkMatch(); // Re-verify match if main password changes
+    checkMatch(); 
 }
 
 function checkMatch() {
@@ -143,7 +197,7 @@ function checkMatch() {
 
 function validatePhone() {
     var input = document.getElementById("phoneInput");
-    input.value = input.value.replace(/[^0-9]/g, ''); // Numeric only[cite: 6]
+    input.value = input.value.replace(/[^0-9]/g, ''); 
 }
 
 function toggleSinglePass(fieldId, iconElement) {
@@ -151,10 +205,10 @@ function toggleSinglePass(fieldId, iconElement) {
     
     if (passwordField.type === "password") {
         passwordField.type = "text";
-        iconElement.textContent = "visibility"; // Changes icon to open eye
+        iconElement.textContent = "visibility"; 
     } else {
         passwordField.type = "password";
-        iconElement.textContent = "visibility_off"; // Changes icon to slashed eye
+        iconElement.textContent = "visibility_off"; 
     }
 }
 </script>
