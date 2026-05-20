@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS addresses (
     state VARCHAR(255) NOT NULL,
     postal_code VARCHAR(20) NOT NULL,
     country VARCHAR(255) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
@@ -123,3 +124,5 @@ CREATE TABLE IF NOT EXISTS register_verify (
 ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) AFTER total_price;
 
 ALTER TABLE cart ADD COLUMN selected boolean NOT NULL DEFAULT true AFTER active;
+
+ALTER TABLE addresses ADD COLUMN active boolean NOT NULL DEFAULT true AFTER country;
