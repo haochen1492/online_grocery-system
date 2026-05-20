@@ -176,6 +176,12 @@ button:hover, .btn:hover, .add_to_cart-btn:hover {
     gap: 20px;
 }
 
+.stock-warning {
+    display: block;
+    color: #ff0000;
+    font-size: 13px;
+}
+
 .item-details img.item-image {
     width: 90px;
     height: 90px;

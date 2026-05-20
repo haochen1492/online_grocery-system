@@ -53,7 +53,7 @@ if (isset($_POST['add_address'])) {
 // 3. HANDLE DELETING ADDRESS
 if (isset($_POST['delete_address'])) {
     $addr_id = $_POST['address_id'];
-    $stmt = $conn->prepare("DELETE FROM addresses WHERE address_id = ? AND customer_id = ?");
+    $stmt = $conn->prepare("UPDATE addresses SET active = 0 WHERE address_id = ? AND customer_id = ?");
     $stmt->bind_param("ii", $addr_id, $user_id);
     $stmt->execute();
     $message = "Address removed.";
@@ -150,7 +150,7 @@ $user_data = $stmt->get_result()->fetch_assoc();
     <div class="form-section">
         <h3>Delivery Addresses</h3>
         <?php
-        $addr_query = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ?");
+        $addr_query = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ? AND active = 1");
         $addr_query->bind_param("i", $user_id);
         $addr_query->execute();
         $res = $addr_query->get_result();

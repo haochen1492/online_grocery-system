@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const phoneInput = document.getElementById('phone_number').value;
         const pinInput = document.getElementById('tng_pin').value;
 
-        if (!/^01\d{9,10}$/.test(phoneInput) ) {
+        if (!/^01\d{8,9}$/.test(phoneInput) ) {
             alert('Please enter a valid Malaysian phone number starting with 01 and should be 10 or 11 digits (e.g., 0123456789).');
             e.preventDefault();
             return false;
