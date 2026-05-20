@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
                                         <a href="cart.php?product_id=<?php echo $id; ?>&update_qty=increase" class="qty-btn">+</a>
                                     <?php else: ?>
                                         <span class="qty-btn">+</span>
-                                        <br><small>Max Stock Reached</small>
+                                        <br><small class="stock-warning">Max stock Reached</small>
                                     <?php endif; ?>
                                     <small> x RM<?php echo number_format($item['price'], 2); ?></small>
                                 </div>

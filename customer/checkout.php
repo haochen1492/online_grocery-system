@@ -9,8 +9,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
 
     if ($data && isset($_SESSION['customer_id'])) {
         $customer_id = $_SESSION['customer_id'];
+        
+        // sanitize and trim empty spaces from the inputs
+        $unit_no = trim($data['unit_no']);
+        $street = trim($data['street']);
+        $city = trim($data['city']);
+        $state = trim($data['state']);
+        $postal_code = trim($data['postal_code']);
+
+        // server-Side Blank Check
+        if (empty($unit_no) || empty($street) || empty($city) || empty($state) || empty($postal_code)) {
+            echo json_encode(['success' => false, 'message' => 'Please fill in all address fields.']);
+            exit; // Stops the script before it touches the database
+        }
+
+        // server-Side Postal Code Format Check
+        if (!preg_match('/^\d{5}$/', $postal_code)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid postal code format.']);
+            exit;
+        }
+
+        // safe Database Insertion
         $stmt = $conn->prepare("INSERT INTO addresses (customer_id, unit_no, street, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, 'Malaysia')");
-        $stmt->bind_param("isssss", $customer_id, $data['unit_no'], $data['street'], $data['city'], $data['state'], $data['postal_code']);
+        $stmt->bind_param("isssss", $customer_id, $unit_no, $street, $city, $state, $postal_code);
         
         if ($stmt->execute()) {
             echo json_encode(['success' => true]);
@@ -67,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $error = "Please select a shipping address before placing your order.";
     } else {
         $address_id = $_POST['address_id'];
+        $address_check = $conn->prepare("SELECT * FROM addresses WHERE address_id = ? AND customer_id = ? AND active = 1");
+        $address_check->bind_param("ii", $address_id, $customer_id);
         $payment_method = $_POST['payment_method'];
         $status = 'pending';
 
@@ -146,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
        }
 }
 
-$stmt_addr = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ?");
+$stmt_addr = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ? AND active = 1");
 $stmt_addr->bind_param("i", $customer_id);
 $stmt_addr->execute();
 $address_result = $stmt_addr->get_result();
@@ -194,7 +217,7 @@ $address_result = $stmt_addr->get_result();
                             <?php if ($address_result->num_rows > 0): ?>
                                 <?php while ($addr = $address_result->fetch_assoc()): ?>
                                     <label class="address-radio-card">
-                                        <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>" required>
+                                        <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>">
                                         <div class="address-text-details">
                                             <?php echo htmlspecialchars($addr['unit_no'] . ", " . $addr['street'] . ", " . $addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
                                         </div>
@@ -229,7 +252,7 @@ $address_result = $stmt_addr->get_result();
                         
                         <div class="payment-selection-box" style="margin-top: 20px;">
                             <label for="payment_method" style="margin-top: 0; margin-bottom: 8px;">Payment Method:</label>
-                            <select name="payment_method" id="payment_method" required>
+                            <select name="payment_method" id="payment_method">
                                 <option value="">-- Select Method --</option>
                                 <option value="Credit/Debit Card">Credit/Debit Card</option>
                                 <option value="Cash On Delivery">Cash on Delivery</option>
@@ -247,11 +270,11 @@ $address_result = $stmt_addr->get_result();
         <div id="address-modal-overlay" class="address-modal-overlay">
             <div class="address-modal-content">
                 <h4>Add New Address</h4>
-                <div id="addressInputs">
-                    <input type="text" id="unit_no" placeholder="House No./Unit No./Block" required>
-                    <input type="text" id="street" placeholder="Street Name (e.g., Lorong X/XX)" required>
-                    <input type="text" id="city" placeholder="City" required>
-                    <select name="state" id="state" required>
+                <div id="addressInputs" onsubmit="return validateAddressForm(event)">
+                    <input type="text" id="unit_no" placeholder="House No./Unit No./Block" >
+                    <input type="text" id="street" placeholder="Street Name (e.g., Lorong X/XX)" >
+                    <input type="text" id="city" placeholder="City" >
+                    <select name="state" id="state" >
                         <option value="">-- Select State --</option>
                         <option value="Johor">Johor</option>
                         <option value="Kedah">Kedah</option>
@@ -267,7 +290,7 @@ $address_result = $stmt_addr->get_result();
                         <option value="Selangor">Selangor</option>
                         <option value="Terengganu">Terengganu</option>
                     </select>
-                    <input type="text" id="postal_code" placeholder="Postal Code (e.g., 57000)" required>
+                    <input type="text" id="postal_code" placeholder="Postal Code (e.g., 57000)" >
                     <div style="display:flex; gap:10px; margin-top: 15px;">
                         <button type="button" class="btn-secondary" onclick="saveNewAddress()">Save Address</button>
                         <button type="button" onclick="closeAddressForm()" style="background-color: #95a5a6;">Cancel</button>
@@ -333,26 +356,26 @@ $address_result = $stmt_addr->get_result();
             }
         });
 
-        // basic client-side validation for address form
-        document.getElementById('addressInputs').addEventListener('submit', function(e) {
-            const unitNo = document.getElementById('unit_no').value.trim();
-            const street = document.getElementById('street').value.trim();
-            const city = document.getElementById('city').value.trim();
+        function validateAddressForm(e) {
+            const unitNo = document.getElementById('unit_no').value;
+            const street = document.getElementById('street').value;
+            const city = document.getElementById('city').value;
             const state = document.getElementById('state').value;
-            const postalCode = document.getElementById('postal_code').value.trim();
+            const postalCode = document.getElementById('postal_code').value;
 
             if (!unitNo || !street || !city || !state || !postalCode) {
                 alert('Please fill in all address fields.');
                 e.preventDefault();
-                return;
+                return false;
             }
 
             if (!/^\d{5}$/.test(postalCode)) {
                 alert('Please enter a valid 5-digit postal code.');
                 e.preventDefault();
-                return;
+                return false;
             }
-        });
+            return true;
+        }
     </script>
 </body>
 </html>
