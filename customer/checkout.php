@@ -88,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $error = "Please select a shipping address before placing your order.";
     } else {
         $address_id = $_POST['address_id'];
+        $address_check = $conn->prepare("SELECT * FROM addresses WHERE address_id = ? AND customer_id = ? AND active = 1");
+        $address_check->bind_param("ii", $address_id, $customer_id);
         $payment_method = $_POST['payment_method'];
         $status = 'pending';
 
@@ -167,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
        }
 }
 
-$stmt_addr = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ?");
+$stmt_addr = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ? AND active = 1");
 $stmt_addr->bind_param("i", $customer_id);
 $stmt_addr->execute();
 $address_result = $stmt_addr->get_result();
