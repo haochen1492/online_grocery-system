@@ -109,10 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
         <span id="matchError" class="error-hint">Passwords must match!</span>
         
-        <div style="margin: 10px 0;">
-            <input type="checkbox" onclick="togglePassword()"> Show Passwords
-        </div>
-
         <button type="submit" class="btn">Register</button>
     </form>
         <p style="margin-top: 15px;">
