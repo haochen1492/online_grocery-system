@@ -770,3 +770,94 @@ th {
 .tng-pay-btn:hover {
     background-color: #0f2f66;
 }
+
+/*RECEIPT PAGE STYLES*/
+.receipt-container {
+    max-width: 800px;
+    margin: 20px auto; 
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+.receipt-header {
+    text-align: center;
+    border-bottom: 2px solid #329b18;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+.receipt-header h1 {
+    color: #329b18;
+    margin: 0 0 10px 0;
+}
+.receipt-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+.receipt-meta-box {
+    flex: 1;
+}
+.receipt-meta-box h3 {
+    color: #48327a;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+.receipt-meta-box p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #555;
+}
+/* Scoped table styles so it doesn't break other pages */
+.receipt-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+    margin-top: 0; 
+}
+.receipt-container th, .receipt-container td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.receipt-container th {
+    background-color: #f8f9fa;
+    color: #48327a;
+    font-weight: bold;
+}
+.text-right {
+    text-align: right !important;
+}
+.totals-box {
+    width: 300px;
+    float: right;
+}
+.totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 15px;
+}
+.receipt-grand-total {
+    font-size: 18px;
+    font-weight: bold;
+    color: #329b18;
+    border-top: 2px solid #eee;
+    padding-top: 10px;
+    margin-top: 5px;
+}
+.clear {
+    clear: both;
+}
+.receipt-action-buttons {
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* Print styling to hide buttons and shadows when saving as PDF */
+@media print {
+    body { background-color: #fff !important; padding: 0 !important; }
+    .receipt-container { box-shadow: none; padding: 0; margin: 0; }
+    .receipt-action-buttons { display: none !important; }
+}

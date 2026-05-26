@@ -80,6 +80,7 @@ $stmt->close();
                     <th>Delivery Status</th>
                     <th>Payment Method</th>
                     <th>Payment Status</th>
+                    <th>Receipt</th>
                 </tr>
             </thead>
             <tbody>
@@ -94,9 +95,12 @@ $stmt->close();
                         <td class="status-<?php echo $order['payment_status']; ?>">
                             <?php echo ucfirst($order['payment_status'] ?? 'pending'); ?>
                         </td>
+                        <td>
+                            <a href="receipt.php?order_id=<?php echo $order['order_id']; ?>" target="_blank" class="btn btn-primary">View Receipt</a>
+                        </td>
                     </tr>
                     <tr>
-                        <td colspan="5" style="padding: 10px 20px;">
+                        <td colspan="6" style="padding: 10px 20px;">
                             <div class="history-items-wrapper">
                                 <?php foreach ($order['items'] as $item): ?>
                                     <div class="history-item-row">

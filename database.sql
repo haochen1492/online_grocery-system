@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS products (
     stock_quantity int NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(category_id),
-    product_image VARCHAR(255)
+    product_image VARCHAR(255),
+    active BOOLEAN NOT NULL DEFAULT TRUE
 );
 INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('1','Beijing Cabbage (China) 600g','Beijing Cabbage (China) 600g','4.90','50','beijingcabbage600g.jpg');
 INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('2','Dole Banana (Philippines) 1pack','Ripe bananas from tropical plantations, known for their creamy texture and natural sweetness. The hand of fruits arrives at perfect eating ripeness. Required 3-days advance for large order.','8.20','50','dolebanana1pack.jpg');
@@ -126,3 +127,5 @@ ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) AFTER total_price;
 ALTER TABLE cart ADD COLUMN selected boolean NOT NULL DEFAULT true AFTER active;
 
 ALTER TABLE addresses ADD COLUMN active boolean NOT NULL DEFAULT true AFTER country;
+
+ALTER TABLE products ADD COLUMN active boolean NOT NULL DEFAULT true AFTER product_image;
