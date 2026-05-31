@@ -55,7 +55,7 @@
   <div class="topbar">
     <div class="tb-left">
       <h1><?= sanitize($page_title??'Dashboard') ?></h1>
-      <div class="crumb">FreshMart Admin › <?= sanitize($page_title??'Dashboard') ?></div>
+      <div class="crumb">Infinity Grocer Admin › <?= sanitize($page_title??'Dashboard') ?></div>
     </div>
     <div class="tb-right">
       <div class="tb-clock" id="clock">--:--</div>

@@ -14,16 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price  = (float)($_POST['price'] ?? 0);
     $stock  = (int)($_POST['stock_quantity'] ?? 0);
     $img    = sanitize($_POST['product_image'] ?? '');
+    $active = (int)($_POST['active'] ?? 0);
 
     if ($action === 'add') {
-        $st = $db->prepare("INSERT INTO products (category_id,name,description,price,stock_quantity,product_image) VALUES (?,?,?,?,?,?)");
-        $st->bind_param("issdis", $cat_id, $name, $desc, $price, $stock, $img);
+        $st = $db->prepare("INSERT INTO products (category_id,name,description,price,stock_quantity,product_image,active) VALUES (?,?,?,?,?,?,?)");
+        $st->bind_param("issdisi", $cat_id, $name, $desc, $price, $stock, $img, $active);
         $st->execute();
         redirect('products.php', "Product '$name' added successfully!");
     } elseif ($action === 'edit') {
         $id = (int)$_POST['product_id'];
-        $st = $db->prepare("UPDATE products SET category_id=?,name=?,description=?,price=?,stock_quantity=?,product_image=? WHERE product_id=?");
-        $st->bind_param("issdisi", $cat_id, $name, $desc, $price, $stock, $img, $id);
+        $st = $db->prepare("UPDATE products SET category_id=?,name=?,description=?,price=?,stock_quantity=?,product_image=?,active=? WHERE product_id=?");
+        $st->bind_param("issdisii", $cat_id, $name, $desc, $price, $stock, $img, $active, $id);
         $st->execute();
         redirect('products.php', "Product '$name' updated!");
     }
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── HANDLE DELETE ──
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $db->query("DELETE FROM products WHERE product_id = $id");
+    $db->query("UPDATE products SET active = 0 WHERE product_id = $id");
     redirect('products.php', 'Product deleted.', 'info');
 }
 
@@ -41,17 +42,18 @@ $view   = $_GET['view']     ?? 'table';
 $search = sanitize($_GET['search']   ?? '');
 $fcat   = (int)($_GET['category'] ?? 0);
 
-$where = "WHERE 1";
+$where = "WHERE p.active = 1";
 if ($search) $where .= " AND p.name LIKE '%$search%'";
 if ($fcat)   $where .= " AND p.category_id = $fcat";
 
 $result = $db->query("
-    SELECT p.*, c.category_name
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.category_id
-    $where
+    SELECT p.*, c.category_name 
+    FROM products p 
+    JOIN categories c ON p.category_id = c.category_id 
+    $where 
     ORDER BY p.created_at DESC
 ");
+
 $rows = [];
 while ($r = $result->fetch_assoc()) $rows[] = $r;
 
@@ -116,7 +118,7 @@ require_once '../includes/header.php';
             <?php endif; ?>
 
             <?php if ($p['product_image']): ?>
-            <img src="<?= sanitize($p['product_image']) ?>" class="p-card-img" alt="<?= sanitize($p['name']) ?>"
+            <img src="../products/<?= sanitize($p['product_image']) ?>" class="p-card-img" alt="<?= sanitize($p['name']) ?>"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
             <div class="p-card-img-ph" style="display:none">📦</div>
             <?php else: ?>
@@ -167,7 +169,7 @@ require_once '../includes/header.php';
                 <td style="color:var(--text3)"><?= $i++ ?></td>
                 <td>
                     <?php if ($p['product_image']): ?>
-                    <img src="<?= sanitize($p['product_image']) ?>" class="p-thumb" alt=""
+                    <img src="../products/<?= sanitize($p['product_image']) ?>" class="p-thumb" alt=""
                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
                     <div class="p-thumb-ph" style="display:none">📦</div>
                     <?php else: ?>
@@ -240,7 +242,7 @@ require_once '../includes/header.php';
                            placeholder="https://images.unsplash.com/..."
                            oninput="previewImg('ai_prev', this.value)">
                     <div style="margin-top:9px">
-                        <img id="ai_prev" src="" style="width:80px;height:80px;border-radius:9px;object-fit:cover;border:1px solid var(--border);display:none" alt="">
+                        <img id="ai_prev" src="../products/" style="width:80px;height:80px;border-radius:9px;object-fit:cover;border:1px solid var(--border);display:none" alt="">
                     </div>
                 </div>
                 <div class="form-group">
@@ -293,8 +295,7 @@ require_once '../includes/header.php';
                 </div>
                 <div class="form-group">
                     <label>Product Image URL</label>
-                    <input type="text" name="product_image" id="ep_img"
-                           oninput="previewImg('ep_prev', this.value)">
+                    <input type="text" name="product_image" id="ep_img"oninput="'../products/' + this.value; previewImg('ep_prev', '../products/' + this.value)">
                     <div style="margin-top:9px">
                         <img id="ep_prev" src="" style="width:80px;height:80px;border-radius:9px;object-fit:cover;border:1px solid var(--border)" alt="">
                     </div>

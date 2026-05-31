@@ -8,16 +8,17 @@ $cat_result = $conn->query($cat_query);
 
 // check if a specific category was clicked
 $category_id = isset($_GET['category_id']) ? $_GET['category_id'] : null;
+$active = 1;
 
 // prepare the product query based on the filter
 if ($category_id) {
-    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ?");
-    $stmt->bind_param("i", $category_id);
+    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = 1");
+    $stmt->bind_param("ii", $category_id, $active = 1);
     $stmt->execute();
     $product_result = $stmt->get_result();
 } else {
     // show all products if no filter is selected
-    $product_query = "SELECT * FROM products";
+    $product_query = "SELECT * FROM products WHERE active = 1";
     $product_result = $conn->query($product_query);
 }
 ?>

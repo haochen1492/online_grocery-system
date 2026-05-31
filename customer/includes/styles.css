@@ -771,7 +771,6 @@ th {
     background-color: #0f2f66;
 }
 
-/*RECEIPT PAGE STYLES*/
 .receipt-container {
     max-width: 800px;
     margin: 20px auto; 
@@ -809,7 +808,7 @@ th {
     font-size: 14px;
     color: #555;
 }
-/* Scoped table styles so it doesn't break other pages */
+
 .receipt-container table {
     width: 100%;
     border-collapse: collapse;

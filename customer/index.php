@@ -3,7 +3,7 @@ include '../includes/dbconnect.php';
 session_start();
 
 // Fetch 4 products for the 'Featured' section
-$featured_query = "SELECT * FROM products LIMIT 4";
+$featured_query = "SELECT * FROM products WHERE active = 1 LIMIT 4";
 $featured_result = $conn->query($featured_query);
 ?>
 

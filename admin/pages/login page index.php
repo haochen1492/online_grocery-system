@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="left-dots"></div>
     <div class="left-content">
         <div class="left-logo">🛒</div>
-        <h1>FreshMart<br>Admin</h1>
+        <h1>Infinity Grocer<br>Admin</h1>
         <p>Manage your online grocery store efficiently with a powerful admin dashboard.</p>
         <div class="features">
             <div class="feat"><span class="fi">👑</span> Superadmin can add & manage admins</div>
@@ -207,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <strong>Superadmin:</strong> superadmin / superadmin123<br>
             <strong>Admin:</strong> admin / admin123
         </div>
-        <p class="copy">© <?= date('Y') ?> FreshMart. All rights reserved.</p>
+        <p class="copy">© <?= date('Y') ?> Infinity Grocer. All rights reserved.</p>
     </div>
 </div>
 

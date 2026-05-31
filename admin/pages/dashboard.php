@@ -8,7 +8,7 @@ $page_title='Dashboard';
 $s_orders    =$db->query("SELECT COUNT(*) c FROM orders")->fetch_assoc()['c'];
 $s_revenue   =$db->query("SELECT COALESCE(SUM(total_price),0) t FROM orders")->fetch_assoc()['t'];
 $s_customers =$db->query("SELECT COUNT(*) c FROM customers")->fetch_assoc()['c'];
-$s_products  =$db->query("SELECT COUNT(*) c FROM products")->fetch_assoc()['c'];
+$s_products  =$db->query("SELECT COUNT(*) c FROM products WHERE active = 1")->fetch_assoc()['c'];
 $s_pending   =$db->query("SELECT COUNT(*) c FROM orders WHERE delivery_status='pending'")->fetch_assoc()['c'];
 $s_shipped   =$db->query("SELECT COUNT(*) c FROM orders WHERE delivery_status='shipped'")->fetch_assoc()['c'];
 $s_delivered =$db->query("SELECT COUNT(*) c FROM orders WHERE delivery_status='delivered'")->fetch_assoc()['c'];
@@ -18,9 +18,9 @@ $s_cats      =$db->query("SELECT COUNT(*) c FROM categories")->fetch_assoc()['c'
 
 $recent=$db->query("SELECT o.order_id,o.order_date,o.total_price,o.delivery_status,c.customer_name FROM orders o JOIN customers c ON o.customer_id=c.customer_id ORDER BY o.order_date DESC LIMIT 7");
 
-$top=$db->query("SELECT p.name,p.product_image,SUM(od.quantity) sold FROM order_details od JOIN products p ON od.product_id=p.product_id GROUP BY od.product_id ORDER BY sold DESC LIMIT 5");
+$top=$db->query("SELECT p.name,p.product_image,SUM(od.quantity) sold FROM order_details od JOIN products p ON od.product_id=p.product_id WHERE p.active = 1 GROUP BY od.product_id ORDER BY sold DESC LIMIT 5");
 
-$low=$db->query("SELECT p.name,p.stock_quantity,p.product_image,c.category_name FROM products p JOIN categories c ON p.category_id=c.category_id WHERE p.stock_quantity<=15 ORDER BY p.stock_quantity ASC LIMIT 6");
+$low=$db->query("SELECT p.name,p.stock_quantity,p.product_image,c.category_name FROM products p JOIN categories c ON p.category_id=c.category_id WHERE p.stock_quantity<=15 AND p.active = 1 ORDER BY p.stock_quantity ASC LIMIT 6");
 
 require_once '../includes/header.php';
 ?>
