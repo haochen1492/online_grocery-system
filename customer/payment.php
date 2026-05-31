@@ -130,6 +130,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const expiryDate = document.getElementById('expiry_date').value;
         const cvv = document.getElementById('cvv').value;
 
+        if (!/^[a-zA-Z\s]+$/.test(document.getElementById('name_on_card').value)) {
+            alert('Please enter a valid name on card.');
+            e.preventDefault();
+            return false;
+        }
+
         if (!/^\d{16}$/.test(cardNumber)) {
             alert('Please enter a valid 16-digit card number.');
             e.preventDefault();
