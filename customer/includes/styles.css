@@ -460,7 +460,7 @@ th {
     }
 }
 
-.address-modal-overlay {
+.address-modal-overlay, .edit-address-modal-overlay {
     display: none;
     position: fixed; 
     top: 0;
@@ -648,6 +648,7 @@ th {
 .address-radio-card {
     display: flex;
     align-items: flex-start;
+    justify-content: space-between;
     gap: 15px;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -668,11 +669,52 @@ th {
     accent-color: #329b18;
 }
 
+.address-label-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    flex: 1; /* Takes up all available empty space */
+    cursor: pointer;
+}
+
+.address-action-buttons {
+    display: flex;
+    gap: 8px; /* Space between Edit and Delete buttons */
+}
+
 .address-text-details {
     font-size: 14px;
     line-height: 1.6;
     color: #444;
     font-weight: normal; 
+}
+
+.btn-action {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 0;
+}
+
+.edit-btn { 
+    background-color: #e2e6ea; 
+    color: #48327a; 
+}
+
+.edit-btn:hover { 
+    background-color: #d3d9df; 
+}
+
+.delete-btn { 
+    background-color: #ffebee;
+    color: #e74c3c; 
+}
+
+.delete-btn:hover { 
+    background-color: #ffcdd2; 
 }
 
 .btn-add-address {

@@ -2,7 +2,7 @@
 session_start();
 require '../includes/dbconnect.php';
 
-// save new address
+// --- API HANDLER FOR ADD & EDIT ADDRESS (JSON POST) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
     $data = json_decode(file_get_contents('php://input'), true);
@@ -10,28 +10,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
     if ($data && isset($_SESSION['customer_id'])) {
         $customer_id = $_SESSION['customer_id'];
         
-        // sanitize and trim empty spaces from the inputs
+        // Sanitize inputs
         $unit_no = trim($data['unit_no']);
         $street = trim($data['street']);
         $city = trim($data['city']);
         $state = trim($data['state']);
         $postal_code = trim($data['postal_code']);
 
-        // server-Side Blank Check
+        // Server-Side Blank Check
         if (empty($unit_no) || empty($street) || empty($city) || empty($state) || empty($postal_code)) {
             echo json_encode(['success' => false, 'message' => 'Please fill in all address fields.']);
-            exit; // Stops the script before it touches the database
+            exit; 
         }
 
-        // server-Side Postal Code Format Check
+        // Server-Side Postal Code Format Check
         if (!preg_match('/^\d{5}$/', $postal_code)) {
             echo json_encode(['success' => false, 'message' => 'Invalid postal code format.']);
             exit;
         }
 
-        // safe Database Insertion
-        $stmt = $conn->prepare("INSERT INTO addresses (customer_id, unit_no, street, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, 'Malaysia')");
-        $stmt->bind_param("isssss", $customer_id, $unit_no, $street, $city, $state, $postal_code);
+        // Check if we are Editing or Adding based on the presence of an address_id
+        if (isset($data['address_id'])) {
+            // EDIT MODE
+            $address_id = intval($data['address_id']);
+            $stmt = $conn->prepare("UPDATE addresses SET unit_no=?, street=?, city=?, state=?, postal_code=? WHERE address_id=? AND customer_id=?");
+            $stmt->bind_param("sssssii", $unit_no, $street, $city, $state, $postal_code, $address_id, $customer_id);
+        } else {
+            // ADD MODE
+            $stmt = $conn->prepare("INSERT INTO addresses (customer_id, unit_no, street, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, 'Malaysia')");
+            $stmt->bind_param("isssss", $customer_id, $unit_no, $street, $city, $state, $postal_code);
+        }
         
         if ($stmt->execute()) {
             echo json_encode(['success' => true]);
@@ -41,6 +49,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
         $stmt->close();
     }
     exit; 
+}
+
+// delete address
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['address_id']) && isset($_SESSION['customer_id'])) {
+    $address_id = $_GET['address_id'];
+    $customer_id = $_SESSION['customer_id'];
+
+    $stmt = $conn->prepare("UPDATE addresses SET active = 0 WHERE address_id = ? AND customer_id = ?");
+    $stmt->bind_param("ii", $address_id, $customer_id);
+    $stmt->execute();
+    $stmt->close();
+
+    header('Location: checkout.php');
+    exit;
 }
 
 // check if user is logged in
@@ -216,12 +238,21 @@ $address_result = $stmt_addr->get_result();
                         <div id="saved-addresses" class="address-selection-group">
                             <?php if ($address_result->num_rows > 0): ?>
                                 <?php while ($addr = $address_result->fetch_assoc()): ?>
-                                    <label class="address-radio-card">
-                                        <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>">
-                                        <div class="address-text-details">
-                                            <?php echo htmlspecialchars($addr['unit_no'] . ", " . $addr['street'] . ", " . $addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
+                                    <div class="address-radio-card">
+                                        
+                                        <label class="address-label-wrapper">
+                                            <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>">
+                                            <div class="address-text-details">
+                                                <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, 
+                                                <?php echo htmlspecialchars($addr['street'] . ", " . $addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
+                                            </div>
+                                        </label>
+
+                                        <div class="address-action-buttons">
+                                            <button type="button" class="btn-action edit-btn" onclick="showEditAddressForm(<?php echo $addr['address_id']; ?>, '<?php echo addslashes(htmlspecialchars($addr['unit_no'])); ?>', '<?php echo addslashes(htmlspecialchars($addr['street'])); ?>', '<?php echo addslashes(htmlspecialchars($addr['city'])); ?>', '<?php echo addslashes(htmlspecialchars($addr['state'])); ?>', '<?php echo addslashes(htmlspecialchars($addr['postal_code'])); ?>')">Edit</button>
+                                            <button type="button" class="btn-action delete-btn" onclick="if(confirm('Are you sure you want to delete this address?')) { window.location.href='checkout.php?address_id=<?php echo $addr['address_id']; ?>'; }">Delete</button>
                                         </div>
-                                    </label>
+                                    </div>
                                 <?php endwhile; ?>
                             <?php else: ?>
                                 <p style="color: #777; margin-bottom: 15px;">No addresses found in your profile.</p>
@@ -297,10 +328,88 @@ $address_result = $stmt_addr->get_result();
                     </div>
                 </div>
             </div>
-        </div>   
+        </div>
+        <div id="edit-address-modal-overlay" class="edit-address-modal-overlay">
+            <div class="address-modal-content">
+                <h4>Edit Address</h4>
+                <div id="editAddressInputs" onsubmit="return validateEditAddressForm(event)">
+                    <input type="text" id="edit_unit_no" placeholder="House No./Unit No./Block" >
+                    <input type="text" id="edit_street" placeholder="Street Name (e.g., Lorong X/XX)" >
+                    <input type="text" id="edit_city" placeholder="City" >
+                    <select name="state" id="edit_state" >
+                        <option value="">-- Select State --</option>
+                        <option value="Johor">Johor</option>
+                        <option value="Kedah">Kedah</option>
+                        <option value="Kelantan">Kelantan</option>
+                        <option value="Melaka">Melaka</option>
+                        <option value="Negeri Sembilan">Negeri Sembilan</option>
+                        <option value="Pahang">Pahang</option>
+                        <option value="Perak">Perak</option>
+                        <option value="Perlis">Perlis</option>
+                        <option value="Penang">Penang</option>
+                        <option value="Sabah">Sabah</option>
+                        <option value="Sarawak">Sarawak</option>
+                        <option value="Selangor">Selangor</option>
+                        <option value="Terengganu">Terengganu</option>
+                    </select>
+                    <input type="text" id="edit_postal_code" placeholder="Postal Code (e.g., 57000)" >
+                    <div style="display:flex; gap:10px; margin-top: 15px;">
+                        <button type="button" class="btn-secondary" onclick="saveEditedAddress()">Save Address</button>
+                        <button type="button" onclick="closeEditAddressForm()" style="background-color: #95a5a6;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
+        function showEditAddressForm(id, unit_no, street, city, state, postal_code) {
+            document.getElementById('editAddressInputs').setAttribute('data-address-id', id);
+            document.getElementById('edit_unit_no').value = unit_no;
+            document.getElementById('edit_street').value = street;
+            document.getElementById('edit_city').value = city;
+            document.getElementById('edit_state').value = state;
+            document.getElementById('edit_postal_code').value = postal_code;
+            document.getElementById('edit-address-modal-overlay').style.display = 'flex';
+            document.getElementById('editAddressInputs').setAttribute('data-address-id', id);
+        }
+
+        function saveEditedAddress() {
+            const addressId = document.getElementById('editAddressInputs').getAttribute('data-address-id');
+            const data = {
+                address_id: addressId, // Sending this tells the PHP file to enter EDIT mode
+                unit_no: document.getElementById('edit_unit_no').value,
+                street: document.getElementById('edit_street').value,
+                city: document.getElementById('edit_city').value,
+                state: document.getElementById('edit_state').value,
+                postal_code: document.getElementById('edit_postal_code').value
+            };
+            
+            // Point the fetch back to checkout.php
+            fetch('checkout.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.success) {
+                    alert('Address updated!');
+                    location.reload(); 
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            })
+            .catch(err => {
+                console.error('Fetch error:', err);
+                alert('Could not connect to the server.');
+            });
+        }
+
+        function closeEditAddressForm() {
+            document.getElementById('edit-address-modal-overlay').style.display = 'none';
+        }
+
         function showAddressForm() { 
             document.getElementById('address-modal-overlay').style.display = 'flex'; 
         }
