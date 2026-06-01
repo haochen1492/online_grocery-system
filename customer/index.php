@@ -124,5 +124,6 @@ function showSlides(n) {
 setInterval(() => { plusSlides(1); }, 5000);
 
 </script>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

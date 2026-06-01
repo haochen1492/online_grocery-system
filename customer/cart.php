@@ -201,4 +201,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
         window.onload = updateDynamicTotal;
     </script>
 </body>
+<?php include 'includes/footer.php'; ?>
 </html>

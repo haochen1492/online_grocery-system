@@ -4,6 +4,10 @@ body {
     margin: 0;
     padding: 0;
     color: #333;
+    position: relative;
+    min-height: 100vh; 
+    padding-bottom: 80px; 
+    box-sizing: border-box;
 }
 
 header {
@@ -896,6 +900,17 @@ th {
     margin-top: 50px;
 }
 
+.footer-container {
+    position: absolute; 
+    bottom: 0; 
+    left: 0;
+    width: 100%; 
+    background-color: #329b18;
+    color: #ffffff;
+    text-align: center;
+    padding: 15px 0;
+    margin: 0; 
+}
 /* Print styling to hide buttons and shadows when saving as PDF */
 @media print {
     body { background-color: #fff !important; padding: 0 !important; }

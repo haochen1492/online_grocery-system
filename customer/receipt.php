@@ -56,6 +56,9 @@ $items_result = $item_stmt->get_result();
         <div class="receipt-header">
             <h1>Infinity Grocer</h1>
             <p>Official Order Receipt</p>
+            <p>Jalan D1, 75450 Ayer Keroh, Melaka, Malaysia</p>
+            <p>Phone: +60 123-456-789 </p>
+            <p>Email: infinitygrocer@gmail.com</p>
         </div>
 
         <div class="receipt-meta">

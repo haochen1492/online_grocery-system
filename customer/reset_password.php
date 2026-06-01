@@ -30,3 +30,4 @@ if (isset($_GET['token'])) {
     <input type="password" name="password" placeholder="New Password" required minlength="15">
     <button type="submit">Update Password</button>
 </form>
+<?php include 'includes/footer.php'; ?>

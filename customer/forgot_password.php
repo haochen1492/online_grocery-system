@@ -125,6 +125,6 @@ if (isset($_POST['subforgot'])) {
         Remembered it? <a href="login.php">Back to Login</a>
     </p>
 </div>
-
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

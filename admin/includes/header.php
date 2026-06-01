@@ -3,14 +3,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?= sanitize($page_title??'Admin') ?> — Infinity Grocery</title>
+<title><?= sanitize($page_title??'Admin') ?> — Infinity Grocer</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 <aside class="sidebar">
   <div class="sb-brand">
     <div class="sb-brand-icon">🛒</div>
-    <div><div class="sb-brand-name">Infinity Grocery</div><div class="sb-brand-sub">Admin Panel</div></div>
+    <div><div class="sb-brand-name">Infinity Grocer</div><div class="sb-brand-sub">Admin Panel</div></div>
   </div>
   <nav class="sb-nav">
     <div class="sb-sec">Overview</div>

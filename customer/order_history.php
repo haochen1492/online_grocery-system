@@ -125,5 +125,6 @@ $stmt->close();
         <p>You have no orders yet. <a href="index.php">Start shopping!</a></p>
     <?php endif; ?>
 </div>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

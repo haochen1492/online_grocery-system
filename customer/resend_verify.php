@@ -29,3 +29,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </form>
     <p><a href="login.php">Back to Login</a></p>
 </div>
+<?php include 'includes/footer.php'; ?>

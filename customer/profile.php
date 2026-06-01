@@ -275,5 +275,6 @@ function checkMatch() {
     document.getElementById("matchError").style.display = (p1 !== p2 && p2 !== "") ? "block" : "none";
 }
 </script>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

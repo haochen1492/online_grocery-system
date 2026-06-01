@@ -30,5 +30,6 @@
             <li><strong>Sustainability:</strong> We are dedicated to reducing our environmental impact and promoting sustainable practices.</li>
         </ul>
     </div>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

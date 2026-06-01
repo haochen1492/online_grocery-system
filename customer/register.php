@@ -212,6 +212,6 @@ function toggleSinglePass(fieldId, iconElement) {
     }
 }
 </script>
-
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

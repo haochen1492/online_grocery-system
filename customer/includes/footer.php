@@ -1,5 +1,3 @@
-<body>
-    <div class="container">
-        <p>&copy; 2026 Infinity Grocer. All rights reserved.</p>
+    <div class="footer-container">
+        <p class="copy">© <?= date('Y') ?> Infinity Grocer. All rights reserved.</p>
     </div>
-</body>
