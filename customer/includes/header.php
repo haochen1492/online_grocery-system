@@ -6,6 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
 <style>
     .header-container {
         display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
         justify-content: space-between;
         align-items: center;
         padding: 15px 5%;
@@ -26,10 +28,57 @@ if (session_status() === PHP_SESSION_NONE) {
         padding: 8px 15px;
         border-radius: 5px;
     }
+
+    .header-search-form {
+        display: flex;
+        flex-direction: row !important; 
+        flex: 1;
+        min-width: 200px;
+        max-width: 400px;
+        margin: 0 30px;
+        border: 2px solid #329b18; 
+        border-radius: 6px; 
+        overflow: hidden; 
+        background-color: #fff;
+    }
+    
+    .header-search-input {
+        flex: 1; 
+        padding: 8px 15px;
+        border: none !important; 
+        outline: none !important;
+        font-size: 15px;
+        margin: 0 !important;
+        background: transparent;
+    }
+    
+    .header-search-btn {
+        background-color: #329b18; 
+        color: white; 
+        border: none;
+        padding: 0 15px; 
+        cursor: pointer;
+        font-size: 18px;
+        margin: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+    }
+    
+    .header-search-btn:hover {
+        background-color: #287a13;
+    }
 </style>
 
 <div class="header-container">
     <p style="font-weight: bold; font-size: 1.5em; color: #329b18; margin: 0;">Infinity Grocer</p>
+
+    <!-- search function on header, send it to products.php -->
+    <form method="GET" action="products.php" class="header-search-form">
+        <input type="text" name="search" class="header-search-input" placeholder="Search for groceries..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+        <button type="submit" class="header-search-btn" title="Search">🔍</button>
+    </form>
     
     <nav class="nav-links">
         <a href="index.php">Home</a>

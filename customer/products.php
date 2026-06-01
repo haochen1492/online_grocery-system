@@ -6,21 +6,37 @@ session_start();
 $cat_query = "SELECT * FROM categories";
 $cat_result = $conn->query($cat_query);
 
-// check if a specific category was clicked
+// get filter parameters
 $category_id = isset($_GET['category_id']) ? $_GET['category_id'] : null;
+$search_query = isset($_GET['search']) ? $_GET['search'] : null;
 $active = 1;
 
-// prepare the product query based on the filter
-if ($category_id) {
-    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = 1");
-    $stmt->bind_param("ii", $category_id, $active = 1);
-    $stmt->execute();
-    $product_result = $stmt->get_result();
+// build product query based on filters
+if ($category_id && !empty($search_query)) {
+    // Both Category AND Search used (e.g., searching "apple" inside "Fruits")
+    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = ? AND name LIKE ?");
+    $search_param = "%" . $search_query . "%";
+    $stmt->bind_param("iis", $category_id, $active, $search_param);
+    
+} elseif ($category_id) {
+    // Only Category clicked
+    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = ?");
+    $stmt->bind_param("ii", $category_id, $active);
+    
+} elseif (!empty($search_query)) {
+    // Only Search typed
+    $stmt = $conn->prepare("SELECT * FROM products WHERE active = ? AND name LIKE ?");
+    $search_param = "%" . $search_query . "%";
+    $stmt->bind_param("is", $active, $search_param);
+    
 } else {
-    // show all products if no filter is selected
-    $product_query = "SELECT * FROM products WHERE active = 1";
-    $product_result = $conn->query($product_query);
+    // Default: Show all active products
+    $stmt = $conn->prepare("SELECT * FROM products WHERE active = ?");
+    $stmt->bind_param("i", $active);
 }
+
+$stmt->execute();
+$product_result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -120,8 +136,6 @@ if ($category_id) {
                     <div class="product-name"><?php echo htmlspecialchars($row['name']); ?></div>
                     <div class="product-price">RM <?php echo number_format($row['price'], 2); ?></div>
                     <div class="stock-label">Availability: <?php echo $row['stock_quantity']; ?> in stock</div>
-                    
-                    <!--<a href="add_to_cart.php?id=<?php echo $row['product_id']; ?>" class="btn-cart">Add to Cart</a>-->
                 </div>
             <?php endwhile; ?>
         <?php else: ?>
@@ -132,12 +146,3 @@ if ($category_id) {
 
 </body>
 </html>
-<script>
-    // make the entire product card clickable
-    document.querySelectorAll('.product-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const productId = card.querySelector('.btn-cart').getAttribute('href').split('id=')[1];
-            window.location.href = `product_detail.php?product_id=${productId}`;
-        });
-    });
-</script>
