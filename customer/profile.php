@@ -50,6 +50,25 @@ if (isset($_POST['add_address'])) {
     }
 }
 
+// NEW: HANDLE UPDATING EXISTING ADDRESS
+if (isset($_POST['update_address'])) {
+    $addr_id = $_POST['address_id'];
+    $unit = $_POST['unit_no'];
+    $line1 = $_POST['address_line1'];
+    $city = $_POST['city'];
+    $state = $_POST['state'];
+    $postcode = $_POST['postal_code'];
+
+    $stmt = $conn->prepare("UPDATE addresses SET unit_no = ?, street = ?, city = ?, state = ?, postal_code = ? WHERE address_id = ? AND customer_id = ?");
+    $stmt->bind_param("sssssii", $unit, $line1, $city, $state, $postcode, $addr_id, $user_id);
+    if ($stmt->execute()) {
+        $message = "Address updated successfully!";
+    } else {
+        $message = "Error updating address.";
+        $message_type = "alert-error";
+    }
+}
+
 // 3. HANDLE DELETING ADDRESS
 if (isset($_POST['delete_address'])) {
     $addr_id = $_POST['address_id'];
@@ -91,6 +110,14 @@ $stmt = $conn->prepare("SELECT * FROM customers WHERE customer_id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $user_data = $stmt->get_result()->fetch_assoc();
+
+// List of Malaysian States for forms
+$states = [
+    "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", 
+    "Pahang", "Penang", "Perak", "Perlis", "Sabah", 
+    "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", 
+    "Labuan", "Putrajaya"
+];
 ?>
 
 <!DOCTYPE html>
@@ -112,12 +139,14 @@ $user_data = $stmt->get_result()->fetch_assoc();
         .password-wrapper { position: relative; display: flex; align-items: center; }
         .toggle-eye { position: absolute; right: 10px; cursor: pointer; color: #666; }
         .btn-save { padding: 12px 25px; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; }
-        .address-card { background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 10px; border-left: 5px solid #329b18; position: relative; }
+        .address-card { background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 10px; border-left: 5px solid #329b18; display: flex; align-items: center; justify-content: space-between; }
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 6px; text-align: center; }
         .alert-success { background-color: #d4edda; color: #155724; }
         .alert-error { background-color: #f8d7da; color: #721c24; }
         .requirement { font-size: 0.85em; color: red; display: block; }
         .valid { color: green; }
+        .action-buttons { display: flex; gap: 10px; align-items: center; }
+        .edit-input { margin-bottom: 5px; width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -146,8 +175,8 @@ $user_data = $stmt->get_result()->fetch_assoc();
             <button type="submit" name="update_profile" class="btn-save" style="background-color: #329b18;">Update Info</button>
         </form>
     </div>
-
-    <div class="form-section">
+    
+<div class="form-section">
         <h3>Delivery Addresses</h3>
         <?php
         $addr_query = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ? AND active = 1");
@@ -155,18 +184,71 @@ $user_data = $stmt->get_result()->fetch_assoc();
         $addr_query->execute();
         $res = $addr_query->get_result();
         
-        while ($addr = $res->fetch_assoc()): ?>
-            <div class="address-card">
-                <div class="address-details" style="flex-grow: 1; padding-right: 15px;">
-                    <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, <?php echo htmlspecialchars($addr['street']); ?><br>
-                    <?php echo htmlspecialchars($addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
-                </div>
-                <form method="POST" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('Are you sure you want to remove this address?');">
-                    <input type="hidden" name="address_id" value="<?php echo $addr['address_id']; ?>">
-                    <button type="submit" name="delete_address" style="background: none; border: none; color: #d9534f; cursor: pointer; padding: 5px; display: flex; align-items: center;">
-                        <span class="material-icons" style="font-size: 24px;">delete</span>
-                    </button>
-                </form>
+        while ($addr = $res->fetch_assoc()): 
+            $is_edit_mode = (isset($_GET['edit_address_id']) && $_GET['edit_address_id'] == $addr['address_id']);
+        ?>
+            <div class="address-card" style="display: flex; flex-direction: column; align-items: stretch; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 6px; margin-bottom: 10px; border-left: 5px solid #329b18;">
+                <?php if ($is_edit_mode): ?>
+                    <form method="POST" action="profile.php" style="width: 100%; margin: 0;">
+                        <input type="hidden" name="address_id" value="<?php echo $addr['address_id']; ?>">
+                        
+                        <label style="font-size: 0.85em; color: #555; margin-top: 5px;">House / Unit / Block No.</label>
+                        <input type="text" name="unit_no" class="edit-input" value="<?php echo htmlspecialchars($addr['unit_no']); ?>" required style="margin-bottom: 8px; width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        
+                        <label style="font-size: 0.85em; color: #555;">Street Name</label>
+                        <input type="text" name="address_line1" class="edit-input" value="<?php echo htmlspecialchars($addr['street']); ?>" required style="margin-bottom: 8px; width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        
+                        <div style="display:flex; gap:10px; margin-bottom:8px;">
+                            <div style="width: 30%;">
+                                <label style="font-size: 0.85em; color: #555;">Postcode</label>
+                                <input type="text" name="postal_code" class="edit-input" style="width:100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" value="<?php echo htmlspecialchars($addr['postal_code']); ?>" required>
+                            </div>
+                            <div style="width: 70%;">
+                                <label style="font-size: 0.85em; color: #555;">City</label>
+                                <input type="text" name="city" class="edit-input" style="width:100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" value="<?php echo htmlspecialchars($addr['city']); ?>" required>
+                            </div>
+                        </div>
+                        
+                        <label style="font-size: 0.85em; color: #555;">State</label>
+                        <select name="state" required style="width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                            <?php foreach ($states as $state) {
+                                $selected = ($addr['state'] == $state) ? "selected" : "";
+                                echo "<option value=\"$state\" $selected>$state</option>";
+                            } ?>
+                        </select>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <button type="submit" name="update_address" class="btn-save" style="background:#28a745; margin: 0; width: auto; padding: 8px 15px; font-size: 0.9em;">Save Changes</button>
+                            <a href="profile.php" class="btn-save" style="background:#6c757d; margin: 0; width: auto; padding: 8px 15px; text-decoration: none; text-align: center; color: white; display: inline-block; line-height: 1.5; font-size: 0.9em;">Cancel</a>
+                        </div>
+                    </form>
+                <?php else: ?>
+                    <div class="address-details" style="width: 100%; margin-bottom: 12px; font-size: 0.95em; line-height: 1.4; color: #333;">
+                        <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, <?php echo htmlspecialchars($addr['street']); ?><br>
+                        <?php echo htmlspecialchars($addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
+                    </div>
+                    
+                    <div class="action-buttons-row" style="display: grid; grid-template-columns: auto 1fr auto; align-items: center; border-top: 1px solid #eaeaea; padding-top: 12px; margin-top: 8px; width: 100%;">
+                        
+                        <div style="display: flex; justify-content: flex-start;">
+                            <a href="profile.php?edit_address_id=<?php echo $addr['address_id']; ?>" style="color: #007bff; text-decoration: none; display: inline-flex; align-items: center; font-size: 0.9em; gap: 6px; font-weight: 500; transition: opacity 0.2s;">
+                                <span class="material-icons" style="font-size: 18px;">edit</span> Edit
+                            </a>
+                        </div>
+                        
+                        <div></div>
+                        
+                        <div style="display: flex; justify-content: flex-end;">
+                            <form method="POST" style="margin: 0; display: inline-flex; align-items: center;" onsubmit="return confirm('Are you sure you want to remove this address?');">
+                                <input type="hidden" name="address_id" value="<?php echo $addr['address_id']; ?>">
+                                <button type="submit" name="delete_address" style="background: none; border: none; color: #d9534f; cursor: pointer; padding: 0; display: inline-flex; align-items: center; font-size: 0.9em; gap: 6px; font-family: inherit; font-weight: 500; transition: opacity 0.2s;">
+                                    <span class="material-icons" style="font-size: 18px;">delete</span> Delete
+                                </button>
+                            </form>
+                        </div>
+                        
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endwhile; ?>
 
@@ -178,27 +260,14 @@ $user_data = $stmt->get_result()->fetch_assoc();
                 <input type="text" name="postal_code" placeholder="Postcode (e.g., 57000)" required style="width:30%;">
                 <input type="text" name="city" placeholder="City (e.g., Petaling Jaya)" required style="width:70%;">
             </div>
-    <div class="row">
-        <div>
-            <select name="state" required style="width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-                <option value="" <?php echo empty($current_data['state']) ? 'selected' : ''; ?> disabled>Choose your state...</option>
-                
-                <?php
-                // The 13 States + 3 Federal Territories
-                $states = [
-                    "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", 
-                    "Pahang", "Penang", "Perak", "Perlis", "Sabah", 
-                    "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", 
-                    "Labuan", "Putrajaya"
-                ];
-                foreach ($states as $state) {
-                    // If the customer has a matching state saved, select it automatically
-                    $selected = (isset($current_data['state']) && $current_data['state'] == $state) ? "selected" : "";
-                    echo "<option value=\"$state\" $selected>$state</option>";
-                }
-                ?>
-            </select>
-        </div>
+            <div>
+                <select name="state" required style="width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                    <option value="" disabled selected>Choose your state...</option>
+                    <?php foreach ($states as $state) {
+                        echo "<option value=\"$state\">$state</option>";
+                    } ?>
+                </select>
+            </div>
             <button type="submit" name="add_address" class="btn-save" style="background:#007bff;">Save Address</button>
         </form>
     </div>
@@ -258,15 +327,15 @@ function toggleSinglePass(fieldId, iconElement) {
 }
 
 function checkRequirements() {
-    var val = document.getElementById("regPassword").value;
+    // Note: corrected from "regPassword" to "new_pass" to match HTML structure
+    var val = document.getElementById("new_pass").value; 
     
-    // Check and update colors
     document.getElementById("len").className = val.length >= 15 ? "requirement valid" : "requirement";
     document.getElementById("upper").className = /[A-Z]/.test(val) ? "requirement valid" : "requirement";
     document.getElementById("lower").className = /[a-z]/.test(val) ? "requirement valid" : "requirement";
     document.getElementById("special").className = /[^\w]/.test(val) ? "requirement valid" : "requirement";
     
-    checkMatch(); // Re-verify match if main password changes
+    checkMatch(); 
 }
 
 function checkMatch() {

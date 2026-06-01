@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Search for the user in the database[cite: 3]
+    // Search for the user in the database
     $stmt = $conn->prepare("SELECT customer_id, customer_password FROM customers WHERE customer_email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
-        // Verify the hashed password[cite: 5]
+        // Verify the hashed password
         if (password_verify($password, $user['customer_password'])) {
             $_SESSION['customer_id'] = $user['customer_id'];
             header("Location: index.php"); 
@@ -36,22 +36,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>Login - Online Grocery System</title>
     <link rel="stylesheet" href="includes/styles.css"> 
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        body {
+            background-image: url('images/login_background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        /* Optional overlay fallback or wrapper adjustment if readability becomes tricky */
+        .auth-container {
+            background-color: rgba(255, 255, 255, 0.95); /* Slight opacity to contrast with the image background */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .footer-container, .footer-container .copy {
+            color: #ffffff !important;
+        }
+    </style>
 </head>
 <body>
 
 <?php include 'includes/header.php'; ?>
 
+
 <div class="auth-container">
     <h2>Login to your account</h2>
 
-    <!-- Error Message Display[cite: 4] -->
+    <!-- Error Message Display -->
     <?php if (isset($error)): ?>
         <div class="error-msg" style="color: red; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center;">
             <?php echo $error; ?>
         </div>
     <?php endif; ?>
 
-    <!-- Registration Success Message[cite: 4] -->
+    <!-- Registration Success Message -->
     <?php if (isset($_GET['registration']) && $_GET['registration'] == 'success'): ?>
         <div class="success-msg" style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center;">
             Registration successful! You can now log in.

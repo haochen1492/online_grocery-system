@@ -119,9 +119,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="includes/styles.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
+        body {
+            background-image: url('images/login_background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
         .requirement { color: red; font-size: 0.85em; display: block; margin-top: 2px; }
         .valid { color: green; }
         .error-hint { color: red; font-size: 0.85em; display: none; }
+        
+        /* Ensures the form containers retain readability over the graphic background */
+        .auth-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .footer-container, .footer-container .copy {
+            color: #ffffff !important;
+        }
     </style>
 </head>
 <body>
