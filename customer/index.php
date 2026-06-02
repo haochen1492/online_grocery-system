@@ -99,7 +99,7 @@ while ($row = $stock_result->fetch_assoc()) {
     <div class="mySlides fade"><img src="images/banner_1.jpg"></div>
     <div class="mySlides fade"><img src="images/banner_3.jpg"></div>
     <div class="mySlides fade"><img src="images/banner_4.jpg"></div>
-    <div class="mySlides fade"><img src="images/banner_5.webp"></div>
+    <div class="mySlides fade"><img src="images/banner_5.jpg"></div>
 
     <a class="prev" onclick="plusSlides(-1)" style="position:absolute; top:45%; left:10px; cursor:pointer; font-size:30px; color:white; background:rgba(0,0,0,0.5); padding:10px;">&#10094;</a>
     <a class="next" onclick="plusSlides(1)" style="position:absolute; top:45%; right:10px; cursor:pointer; font-size:30px; color:white; background:rgba(0,0,0,0.5); padding:10px;">&#10095;</a>
