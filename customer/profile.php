@@ -50,7 +50,7 @@ if (isset($_POST['add_address'])) {
     }
 }
 
-// NEW: HANDLE UPDATING EXISTING ADDRESS
+// handle update existing address
 if (isset($_POST['update_address'])) {
     $addr_id = $_POST['address_id'];
     $unit = $_POST['unit_no'];
@@ -61,7 +61,17 @@ if (isset($_POST['update_address'])) {
 
     $stmt = $conn->prepare("UPDATE addresses SET unit_no = ?, street = ?, city = ?, state = ?, postal_code = ? WHERE address_id = ? AND customer_id = ?");
     $stmt->bind_param("sssssii", $unit, $line1, $city, $state, $postcode, $addr_id, $user_id);
-    if ($stmt->execute()) {
+    // format check for address fields, if no error then execute update
+    if (!preg_match('/^\d{5}$/', $postcode)) {
+        $message = "Postal code must be exactly 5 digits.";
+        $message_type = "alert-error";
+    } else if (empty($line1) || empty($city) || empty($state) || empty($unit) || empty($postcode)) {
+        $message = "All address fields must be filled.";
+        $message_type = "alert-error";
+    } else if (!in_array($state, ["Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", "Pahang", "Penang", "Perak", "Perlis", "Sabah", "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", "Labuan", "Putrajaya"])) {
+        $message = "Invalid state selected.";
+        $message_type = "alert-error";
+    } else if ($stmt->execute()) {
         $message = "Address updated successfully!";
     } else {
         $message = "Error updating address.";
@@ -224,7 +234,7 @@ $states = [
                     </form>
                 <?php else: ?>
                     <div class="address-details" style="width: 100%; margin-bottom: 12px; font-size: 0.95em; line-height: 1.4; color: #333;">
-                        <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, <?php echo htmlspecialchars($addr['street']); ?><br>
+                        <?php echo htmlspecialchars($addr['unit_no']); ?>, <?php echo htmlspecialchars($addr['street']); ?><br>
                         <?php echo htmlspecialchars($addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
                     </div>
                     

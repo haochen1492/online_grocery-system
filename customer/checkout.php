@@ -2,7 +2,7 @@
 session_start();
 require '../includes/dbconnect.php';
 
-// --- API HANDLER FOR ADD & EDIT ADDRESS (JSON POST) ---
+// edit address and add new address (handle by 1 block)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
     header('Content-Type: application/json');
     $data = json_decode(file_get_contents('php://input'), true);
@@ -243,7 +243,7 @@ $address_result = $stmt_addr->get_result();
                                         <label class="address-label-wrapper">
                                             <input type="radio" name="address_id" value="<?php echo $addr['address_id']; ?>">
                                             <div class="address-text-details">
-                                                <strong><?php echo htmlspecialchars($addr['unit_no']); ?></strong>, 
+                                                <?php echo htmlspecialchars($addr['unit_no']); ?>,
                                                 <?php echo htmlspecialchars($addr['street'] . ", " . $addr['postal_code'] . " " . $addr['city'] . ", " . $addr['state']); ?>
                                             </div>
                                         </label>

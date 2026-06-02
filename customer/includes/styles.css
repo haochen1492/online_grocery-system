@@ -6,8 +6,13 @@ body {
     color: #333;
     position: relative;
     min-height: 100vh; 
-    padding-bottom: 80px; 
     box-sizing: border-box;
+}
+
+body::after {
+    content: "";
+    display: block;
+    height: 120px; 
 }
 
 header {
@@ -910,6 +915,10 @@ th {
     text-align: center;
     padding: 15px 0;
     margin: 0; 
+}
+
+.footer-container p {
+    margin: 0;
 }
 /* Print styling to hide buttons and shadows when saving as PDF */
 @media print {
