@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <?php include 'includes/header.php'; ?>
 
 <div class="auth-container">
-    <h2>Create Customer Account</h2>
+    <h2>CREATE AN ACCOUNT</h2>
 
     <?php if (isset($error)): ?>
         <div class="error-msg" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 10px;"><?php echo $error; ?></div>
