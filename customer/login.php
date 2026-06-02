@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 
 <div class="auth-container">
-    <h2>Login to your account</h2>
+    <h2>LOGIN TO YOUR ACCOUNT</h2>
 
     <!-- Error Message Display -->
     <?php if (isset($error)): ?>
