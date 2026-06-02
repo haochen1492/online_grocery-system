@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price  = (float)($_POST['price'] ?? 0);
     $stock  = (int)($_POST['stock_quantity'] ?? 0);
     $img    = sanitize($_POST['product_image'] ?? '');
-    $active = (int)($_POST['active'] ?? 0);
+    $active = (int)($_POST['active'] ?? 1);
 
     if ($action === 'add') {
         $st = $db->prepare("INSERT INTO products (category_id,name,description,price,stock_quantity,product_image,active) VALUES (?,?,?,?,?,?,?)");

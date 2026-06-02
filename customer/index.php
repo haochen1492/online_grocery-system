@@ -3,8 +3,16 @@ include '../includes/dbconnect.php';
 session_start();
 
 // Fetch 4 products for the 'Featured' section
-$featured_query = "SELECT * FROM products WHERE active = 1 LIMIT 4";
+$featured_query = "SELECT * FROM products WHERE active = 1 and stock_quantity > 0 LIMIT 4";
 $featured_result = $conn->query($featured_query);
+
+// check stock quantity > 0 to show available stock or "Out of Stock"
+$stock_query = "SELECT product_id, stock_quantity FROM products WHERE active = 1";
+$stock_result = $conn->query($stock_query);
+$stock_levels = [];
+while ($row = $stock_result->fetch_assoc()) {
+    $stock_levels[$row['product_id']] = $row['stock_quantity'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -71,6 +79,7 @@ $featured_result = $conn->query($featured_query);
         }
         
         .stock-label { font-size: 0.85em; color: #777; margin-bottom: 15px; }
+        .stock-label.out-of-stock { color: #c00; font-weight: bold; font-size: 15px; }
         .btn {
             display: inline-block;
             background: #329b18;
@@ -103,7 +112,13 @@ $featured_result = $conn->query($featured_query);
             <img src="../admin/products/<?php echo $row['product_image']; ?>" style="width:100%; height:150px; object-fit:contain;">
             <h4><?php echo htmlspecialchars($row['name']); ?></h4>
             <p>RM <?php echo number_format($row['price'], 2); ?></p>
-        </div>
+            <div class="stock-label">
+                <?php 
+                    $stock_qty = isset($stock_levels[$row['product_id']]) ? $stock_levels[$row['product_id']] : 0;
+                    echo $stock_qty > 0 ? 'Available: ' . htmlspecialchars($stock_qty) . ' in stock' : '<div class="stock-label out-of-stock">Out of Stock</div>';
+                ?>
+            </div>
+        </div>            
     <?php endwhile; ?>
 </div>
 

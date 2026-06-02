@@ -64,6 +64,17 @@ if (isset($_GET['update_qty']) && isset($_GET['product_id'])) {
     exit;
 }
 
+//check if the stock is out, if so, alert customer and remove from cart
+foreach ($products as $pid => $item) {
+    if ($item['stock_quantity'] <= 0) {
+        $stmt_rem = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND product_id = ?");
+        $stmt_rem->bind_param("ii", $customer_id, $pid);
+        $stmt_rem->execute();
+        unset($_SESSION['cart'][$pid]);
+        echo "<script>alert('Sorry, the product \"{$item['name']}\" is out of stock and has been removed from your cart.');</script>";
+    }
+}
+
 // Handle bulk removal of selected items via POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
     if (!empty($_POST['selected_items'])) {
@@ -95,8 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selected'])) {
 <?php include 'includes/header.php'; ?>
     <div class="cart-container"> 
         <h2>Shopping Cart</h2>
-
-
         <?php if (empty($_SESSION['cart'])): ?>
             <p class="empty-msg">Your cart is empty. <a href="products.php">Go shopping!</a></p>
         <?php else: ?>
