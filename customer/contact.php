@@ -18,7 +18,7 @@
         <p>If you have any questions, feedback, or need assistance, please feel free to contact us. We are here to help!</p>
         <div class="container">
             <h2>Customer Service</h2>
-            <p>📧 Email: infinitygrocer@gmail.com</p>
+            <p>📧 Email: infinitygrocer7@gmail.com</p>
             <p>📞 Phone: +6012-3456789</p>
         </div>
         <div class="container">

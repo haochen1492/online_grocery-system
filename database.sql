@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS admin (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO admin(username, password, admin_role) VALUES ('superadmin', '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 'superadmin');
+INSERT INTO admin(username, email, password, admin_role) VALUES ('superadmin', '@gmail.com' , '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 'superadmin');
 
 CREATE TABLE IF NOT EXISTS categories (
     category_id INT PRIMARY KEY AUTO_INCREMENT,

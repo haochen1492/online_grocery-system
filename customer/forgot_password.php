@@ -45,8 +45,8 @@ if (isset($_POST['subforgot'])) {
                 $mail->isSMTP();
                 $mail->Host       = 'smtp.gmail.com';  
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'angqiyang2006@gmail.com';     
-                $mail->Password   = 'nmql tzth fzpl gpey';         
+                $mail->Username   = 'infinitygrocer7@gmail.com';     
+                $mail->Password   = 'lfxd qida epnm wzxl';         
                 $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 

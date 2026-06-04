@@ -72,13 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $mail->isSMTP();
                 $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'angqiyang2006@gmail.com';       
-                $mail->Password   = 'nmql tzth fzpl gpey'; 
+                $mail->Username   = 'infinitygrocer7@gmail.com';       
+                $mail->Password   = 'lfxd qida epnm wzxl'; 
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
                 // Recipients
-                $mail->setFrom('angqiyang2006@gmail.com', 'Infinity Grocer');
+                $mail->setFrom('infinitygrocer7@gmail.com', 'Infinity Grocer');
                 $mail->addAddress($email, $name);
 
                 // Content
