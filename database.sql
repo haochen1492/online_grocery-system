@@ -5,6 +5,7 @@ USE online_grocery;
 CREATE TABLE IF NOT EXISTS admin (
     admin_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     admin_role enum('superadmin', 'admin') NOT NULL DEFAULT 'admin',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -129,3 +130,5 @@ ALTER TABLE cart ADD COLUMN selected boolean NOT NULL DEFAULT true AFTER active;
 ALTER TABLE addresses ADD COLUMN active boolean NOT NULL DEFAULT true AFTER country;
 
 ALTER TABLE products ADD COLUMN active boolean NOT NULL DEFAULT true AFTER product_image;
+
+ALTER TABLE admin ADD COLUMN email VARCHAR(255) NOT NULL UNIQUE AFTER username;
