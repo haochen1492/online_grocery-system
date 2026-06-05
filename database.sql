@@ -123,6 +123,15 @@ CREATE TABLE IF NOT EXISTS register_verify (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS password_resets (
+    id         INT PRIMARY KEY AUTO_INCREMENT,
+    username   VARCHAR(255) NOT NULL,
+    token      VARCHAR(64)  NOT NULL UNIQUE,
+    expires_at DATETIME     NOT NULL,
+    used       TINYINT(1)   NOT NULL DEFAULT 0,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) AFTER total_price;
 
 ALTER TABLE cart ADD COLUMN selected boolean NOT NULL DEFAULT true AFTER active;
