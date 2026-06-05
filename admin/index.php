@@ -55,6 +55,9 @@ input::placeholder{color:#ccc}
 .err{display:flex;align-items:center;gap:8px;background:var(--rbg);border:1.5px solid #fca5a5;color:var(--red);padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:18px}
 .btn-login{width:100%;background:var(--g);color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .17s;margin-top:5px;box-shadow:0 4px 14px rgba(26,92,56,.26)}
 .btn-login:hover{background:var(--g2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(26,92,56,.32)}
+.forgot-wrap{display:flex;justify-content:flex-end;margin-bottom:4px}
+.forgot-link{font-size:12.5px;color:var(--txt2);text-decoration:none;font-weight:500;transition:color .15s}
+.forgot-link:hover{color:var(--g2)}
 .hint{margin-top:18px;padding:13px 15px;background:var(--gbg);border:1px solid #a7e3be;border-radius:10px;font-size:12.5px;color:var(--g);line-height:1.65}
 .hint strong{font-weight:700}
 .copy{margin-top:20px;text-align:center;font-size:12px;color:#bbb}
@@ -65,7 +68,7 @@ input::placeholder{color:#ccc}
   <div class="lc">
     <div class="lico">🛒</div>
     <h1>Infinity Grocer<br>Admin</h1>
-    <p>Admin Module.</p>
+    <p>Infinity Grocer Admin Page.</p>
     <div class="tasks">
       <div class="task"><span class="ti">👑</span><div><strong>Option 1</strong> — Superadmin adds &amp; manages admins</div></div>
       <div class="task"><span class="ti">📦</span><div><strong>Option 2</strong> — Add categories &amp; products (visible to customers)</div></div>
@@ -94,13 +97,14 @@ input::placeholder{color:#ccc}
           <input type="password" name="password" placeholder="••••••••" required>
         </div>
       </div>
+      <div class="forgot-wrap"><a href="forgot_password.php" class="forgot-link">Forgot password?</a></div>
       <button type="submit" class="btn-login">Sign In →</button>
     </form>
     <div class="hint">
       <strong>Superadmin:</strong> superadmin / superadmin123<br>
       <strong>Admin:</strong> admin / admin123
     </div>
-    <p class="copy">© <?= date('Y') ?> Infinity Grocer </p>
+    <p class="copy">© <?= date('Y') ?> Infinity Grocer</p>
   </div>
 </div>
 </body></html>
