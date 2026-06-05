@@ -16,24 +16,24 @@
     <div class="sb-sec">Overview</div>
     <a href="dashboard.php"  class="sb-link <?= $cur==='dashboard' ?'active':'' ?>"><span class="ico">📊</span>Dashboard</a>
 
-    <div class="sb-sec">Store — Task 2</div>
+    <div class="sb-sec">Store — Option 2</div>
     <a href="categories.php" class="sb-link <?= $cur==='categories'?'active':'' ?>"><span class="ico">🏷️</span>Categories</a>
     <a href="products.php"   class="sb-link <?= $cur==='products'  ?'active':'' ?>"><span class="ico">📦</span>Products</a>
 
-    <div class="sb-sec">Users — Task 3</div>
+    <div class="sb-sec">Users — Option 3</div>
     <a href="customers.php"  class="sb-link <?= $cur==='customers' ?'active':'' ?>">
       <span class="ico">👥</span>Customer List
       <span class="sb-chip sb-chip-ro">view</span>
     </a>
 
-    <div class="sb-sec">Orders — Tasks 4 &amp; 5</div>
+    <div class="sb-sec">Orders — Option 4 &amp; 5</div>
     <a href="orders.php"     class="sb-link <?= $cur==='orders'    ?'active':'' ?>"><span class="ico">🛍️</span>Orders &amp; Products</a>
 
-    <div class="sb-sec">Reports — Task 6</div>
+    <div class="sb-sec">Reports — Option 6</div>
     <a href="reports.php"    class="sb-link <?= $cur==='reports'   ?'active':'' ?>"><span class="ico">📈</span>Generate Report</a>
 
     <?php if($role==='superadmin'): ?>
-    <div class="sb-sec">Superadmin — Task 1</div>
+    <div class="sb-sec">Superadmin — Option 1</div>
     <a href="admins.php"     class="sb-link <?= $cur==='admins'    ?'active':'' ?>">
       <span class="ico">🔑</span>Manage Admins
       <span class="sb-chip sb-chip-sa">SA</span>
@@ -41,6 +41,9 @@
     <?php endif; ?>
 
     <div class="sb-sec">Account</div>
+    <a href="change_password.php" class="sb-link <?= $cur==='change_password'?'active':'' ?>">
+      <span class="ico">🔑</span>Change Password
+    </a>
     <a href="logout.php" class="sb-link"><span class="ico">🚪</span>Logout</a>
   </nav>
   <div class="sb-foot">
