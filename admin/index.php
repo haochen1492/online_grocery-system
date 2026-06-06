@@ -24,7 +24,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin Login — Infinity Grocer</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-<style>
+<style>    
 :root{--g:#1a5c38;--g2:#27764a;--g3:#4caf76;--gbg:#edf7f1;--bg:#f4f6f3;--sur:#fff;--bor:#e4e8e2;--txt:#1a1f1c;--txt2:#5a6a5e;--red:#b91c1c;--rbg:#fef2f2}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;background:var(--bg)}
