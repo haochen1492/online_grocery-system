@@ -135,6 +135,45 @@ CREATE TABLE IF NOT EXISTS password_resets (
     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS orders (
+    order_id        INT PRIMARY KEY AUTO_INCREMENT,
+    order_date      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    address_id      INT NOT NULL,
+    total_price     DECIMAL(10, 2) NOT NULL,
+    delivery_status ENUM('pending', 'shipped', 'delivered') NOT NULL DEFAULT 'pending',
+    customer_id     INT NOT NULL,
+    FOREIGN KEY (address_id)
+        REFERENCES addresses(address_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (customer_id)
+        REFERENCES customers(customer_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    payment_id     INT PRIMARY KEY AUTO_INCREMENT,
+    order_id       INT NOT NULL,
+    payment_date   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    price          DECIMAL(10, 2) NOT NULL,
+    payment_status ENUM('pending', 'completed', 'failed') NOT NULL DEFAULT 'pending',
+    FOREIGN KEY (order_id)
+        REFERENCES orders(order_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS order_details (
+    order_detail_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id        INT NOT NULL,
+    product_id      INT NOT NULL,
+    quantity        INT NOT NULL,
+    product_price   DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id)
+        REFERENCES orders(order_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (product_id)
+        REFERENCES products(product_id)
+);
+
 ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) AFTER total_price;
 
 ALTER TABLE cart ADD COLUMN selected boolean NOT NULL DEFAULT true AFTER active;
