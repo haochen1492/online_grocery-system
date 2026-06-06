@@ -11,12 +11,17 @@ if (isLoggedIn()) {
 
 $success = '';
 $error   = '';
+$email_sent   = false;
+$email_error  = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitize($_POST['username'] ?? '');
+    $email    = sanitize($_POST['email']    ?? '');
 
-    if (empty($username)) {
-        $error = 'Please enter your username.';
+   if (empty($username) || empty($email)) {
+        $error = 'Please enter both your username and email address.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Please enter a valid email address.';
     } else {
         $db = getDB();
 
@@ -28,15 +33,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($admin) {
             // Delete any old unused tokens for this user
-            $db->query("DELETE FROM password_resets WHERE username = '$username'");
+           $clean = $db->prepare("DELETE FROM password_resets WHERE username = ?");
+            $clean->bind_param("s", $username);
+            $clean->execute();
 
             // Generate a secure random token
             $token      = bin2hex(random_bytes(32)); // 64 character hex string
             $expires_at = date('Y-m-d H:i:s', time() + 3600); // expires in 1 hour
 
             // Save token to database
-            $st2 = $db->prepare("INSERT INTO password_resets (username, token, expires_at)
-                                  VALUES (?, ?, ?)");
+            $st2 = $db->prepare("INSERT INTO password_resets (username, token, expires_at) VALUES (?, ?, ?)");
             $st2->bind_param("sss", $username, $token, $expires_at);
             $st2->execute();
 
@@ -45,14 +51,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $host       = $_SERVER['HTTP_HOST'];
             $reset_link = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/reset password.php?token=' . $token;
 
-            // ── In a real system you would send this by email ──
-            // For this project we display it directly (no email server needed)
-            $success = $reset_link;
+ // SEND EMAIL 
+            $html_body = buildResetEmailHTML($username, $reset_link);
+            $result    = sendMail(
+                $email,              // recipient email (typed by admin)
+                $username,           // recipient name
+                'FreshMart Admin — Password Reset Request',
+                $html_body
+            );
+
+            if ($result['success']) {
+                $email_sent = true;
+                $success    = true;
+            } else {
+                // Email failed — store error but still show link for dev/demo
+                $email_error = $result['error'];
+                $success     = true;  // still mark success so reset link shows
+            }
 
         } else {
-            // Don't reveal if username exists or not (security best practice)
-            // Show same success message regardless
-            $success = 'fake'; // triggers success UI without real token
+            // Username not found — show same message (security: don't reveal usernames)
+            $success = true;
         }
     }
 }
@@ -347,36 +366,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card">
 
         <?php if ($success): ?>
-        <!-- ── SUCCESS: Show reset link ── -->
+        <!-- ── SUCCESS ── -->
         <div class="success-box">
             <div class="success-icon">✓</div>
-            <h3>Reset Link Generated!</h3>
-            <p>A password reset link has been created. In production this would be emailed. For now, use the link below:</p>
+            <h3>Check Your Email!</h3>
+            <p>A password reset link has been sent to your email address. Please check your inbox (and spam folder).</p>
         </div>
 
-        <?php if ($success !== 'fake'): ?>
-        <!-- Show actual reset link (dev/demo mode) -->
-        <div class="token-box">
-            <div class="tb-label">🔗 Your Password Reset Link</div>
-            <div class="tb-link"><?= htmlspecialchars($success) ?></div>
+        <?php if ($email_sent): ?>
+        <!-- Email sent successfully -->
+        <div class="token-box" style="background:var(--green-bg);border-color:var(--green3)">
+            <div class="tb-label" style="color:var(--green)">✅ Email Sent Successfully</div>
+            <div class="tb-link" style="color:var(--green2);font-family:inherit;font-size:13px">
+                Reset link sent to: <strong><?= htmlspecialchars($_POST['email'] ?? '') ?></strong>
+            </div>
         </div>
+
+        <?php elseif (!empty($email_error)): ?>
+        <!-- Email failed — show link for dev/demo -->
+        <div class="note-box" style="background:var(--red-bg);border-color:#fca5a5;color:var(--red)">
+            <span class="ni">⚠️</span>
+            <div>
+                <strong>Email could not be sent.</strong> Check your SMTP settings in <code>includes/mailer.php</code>.<br>
+                <small style="opacity:.8">Error: <?= htmlspecialchars($email_error) ?></small>
+            </div>
+        </div>
+        <?php endif; ?>
+
 
         <div class="note-box">
             <span class="ni">⏰</span>
             <div>This link expires in <strong>1 hour</strong>. It can only be used once.</div>
         </div>
 
-        <a href="<?= htmlspecialchars($success) ?>" class="btn-reset">
-            → Go to Reset Password Page
-        </a>
-
-        <?php else: ?>
-        <!-- Username not found but we show generic message (security) -->
-        <div class="note-box">
-            <span class="ni">ℹ️</span>
-            <div>If that username exists, a reset link has been sent. Please check your email or contact your administrator.</div>
-        </div>
-        <?php endif; ?>
 
         <a href="index.php" class="back-link">← Back to Login</a>
 
@@ -420,7 +442,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            required autofocus>
                 </div>
             </div>
-            <button type="submit" class="btn-submit">Generate Reset Link →</button>
+            <div class="form-group">
+                <label>Your Email Address</label>
+                <div class="input-wrap">
+                    <span class="input-icon">✉️</span>
+                    <input type="email" name="email"
+                           placeholder="Enter your email address"
+                           value="<?= sanitize($_POST['email'] ?? '') ?>"
+                           required>
+                </div>
+                <div style="font-size:11.5px;color:var(--text3);margin-top:5px">
+                    The reset link will be sent to this email address.
+                </div>
+            </div>
+            <button type="submit" class="btn-submit">Send Reset Link →</button>
         </form>
 
         <a href="index.php" class="back-link">← Back to Login</a>
@@ -430,4 +465,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 </body>
-</html>
