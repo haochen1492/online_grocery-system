@@ -41,9 +41,10 @@
     <?php endif; ?>
 
     <div class="sb-sec">Account</div>
-    <a href="change password.php" class="sb-link <?= $cur==='change_password'?'active':'' ?>">
-      <span class="ico">🔑</span>Change Password
-    </a>
+    <a href="change_password.php" 
+   class="sb-link <?php echo $cur==='change_password'?'active':''; ?>">
+    <span class="ico">🔑</span>Change Password
+</a>
     <a href="logout.php" class="sb-link"><span class="ico">🚪</span>Logout</a>
   </nav>
   <div class="sb-foot">
