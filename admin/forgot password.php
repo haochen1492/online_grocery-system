@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Build the reset link
             $protocol   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $host       = $_SERVER['HTTP_HOST'];
-            $reset_link = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/reset_password.php?token=' . $token;
+            $reset_link = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/reset password.php?token=' . $token;
 
             // ── In a real system you would send this by email ──
             // For this project we display it directly (no email server needed)
