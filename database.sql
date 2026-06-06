@@ -21,6 +21,7 @@ INSERT INTO `categories`( `category_name`) VALUES ('Vegetables');
 INSERT INTO `categories`( `category_name`) VALUES ('Fruits');
 INSERT INTO `categories`( `category_name`) VALUES ('Snacks');
 INSERT INTO `categories`( `category_name`) VALUES ('Food Essentials');
+INSERT INTO `categories`( `category_name`) VALUES ('Beverages');
 
 CREATE TABLE IF NOT EXISTS products (
     product_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -34,12 +35,14 @@ CREATE TABLE IF NOT EXISTS products (
     product_image VARCHAR(255),
     active BOOLEAN NOT NULL DEFAULT TRUE
 );
-INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('1','Beijing Cabbage (China) 600g','Beijing Cabbage (China) 600g','4.90','50','beijingcabbage600g.jpg');
-INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('2','Dole Banana (Philippines) 1pack','Ripe bananas from tropical plantations, known for their creamy texture and natural sweetness. The hand of fruits arrives at perfect eating ripeness. Required 3-days advance for large order.','8.20','50','dolebanana1pack.jpg');
-INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('3','Oreo Vanilla Slug Sandwich Cookies 110.4g','Oreo Vanilla Slug Sandwich Cookies 110.4g','3.20','50','oreovanillaslugsandwich110.4g.jpg');
-INSERT INTO `products`(`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`) VALUES ('4','San Remo No.5 Spaghetti 500g','San Remo No.5 Spaghetti 500g','5.00','5','sanremospaghetti500g.jpg');
-INSERT INTO `products` (`category_id`, `name`, `description`, `price`, `stock_quantity`, `created_at`, `product_image`) VALUES ('1', 'Bok Choy (Sawi Putih) 350g', 'Bok Choy (Sawi Putih) 350g', '4.70', '50', '2026-05-13 11:11:31', 'bokchoy(sawiputih)350g.webp');
-
+INSERT INTO `products` (`category_id`, `name`, `description`, `price`, `stock_quantity`, `product_image`, `active`) VALUES
+(1, 'Beijing Cabbage (China) 600g', 'Beijing Cabbage (China) 600g', 4.90, 48,  'beijingcabbage600g.jpg', 1),
+(2, 'Dole Banana (Philippines) 1pack', 'Ripe bananas from tropical plantations, known for their creamy texture and natural sweetness. The hand of fruits arrives at perfect eating ripeness. Required 3-days advance for large order.', 8.20, 49, 'dolebanana1pack.jpg', 1),
+(3, 'Oreo Vanilla Slug Sandwich Cookies 110.4g', 'Oreo Vanilla Slug Sandwich Cookies 110.4g', 3.20, 49, 'oreovanillaslugsandwich110.4g.jpg', 1),
+(4, 'San Remo No.5 Spaghetti 500g', 'San Remo No.5 Spaghetti 500g', 5.00, 4,  'sanremospaghetti500g.jpg', 1),
+(1, 'Bok Choy (Sawi Putih) 350g', 'Bok Choy (Sawi Putih) 350g', 4.70, 49, 'bokchoy(sawiputih)350g.webp', 1),
+(3, 'Oriental Super Ring Family Pack 14g x 8', 'Oriental Super Ring Family Pack 14g x 8', 5.00, 99,  'oriental_super_ring_familypack14gx8.jpg', 1),
+(5, 'Yarra Farm Australian Pasteurized Cows Milk 1L', 'Yarra Farm Australian Pasteurized Cows Milk 1L', 8.20, 0,  'yarra_farm_cows_milk1L.jpg', 1);
 
 
 
