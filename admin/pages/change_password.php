@@ -19,16 +19,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate
     if (!password_verify($current_pass, $row['password'])) {
-        redirect('change password.php', 'Current password is incorrect.', 'error');
+        redirect('change_password.php', 'Current password is incorrect.', 'error');
     }
     if (strlen($new_pass) < 6) {
-        redirect('change password.php', 'New password must be at least 6 characters.', 'error');
+        redirect('change_password.php', 'New password must be at least 6 characters.', 'error');
     }
     if ($new_pass !== $confirm_pass) {
-        redirect('change password.php', 'New passwords do not match.', 'error');
+        redirect('change_password.php', 'New passwords do not match.', 'error');
     }
     if (password_verify($new_pass, $row['password'])) {
-        redirect('change password.php', 'New password cannot be the same as current password.', 'error');
+        redirect('change_password.php', 'New password cannot be the same as current password.', 'error');
     }
 
     // Save new password
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $st2->bind_param("si", $hashed, $id);
     $st2->execute();
 
-    redirect('change password.php', 'Password changed successfully! 🎉');
+    redirect('change_password.php', 'Password changed successfully! 🎉');
 }
 
 require_once '../includes/header.php';

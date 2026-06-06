@@ -2,6 +2,8 @@
 require_once 'includes/auth.php';
 require_once 'includes/db.php';
 
+date_default_timezone_set('Asia/Kuala_Lumpur');
+
 // Already logged in → go to dashboard
 if (isLoggedIn()) {
     header('Location: pages/dashboard.php');
@@ -84,7 +86,7 @@ if ($admin && !$success) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password — FreshMart Admin</title>
+    <title>Reset Password — Infinity Grocer Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -365,7 +367,7 @@ if ($admin && !$success) {
 <div class="wrap">
     <div class="brand">
         <div class="brand-icon">🛒</div>
-        <h1>FreshMart Admin</h1>
+        <h1>Infinity Grocer Admin</h1>
         <p>Password Recovery</p>
     </div>
 

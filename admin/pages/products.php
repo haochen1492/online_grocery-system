@@ -237,9 +237,9 @@ require_once '../includes/header.php';
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Product Image URL</label>
+                    <label>Product Image File Name</label>
                     <input type="text" name="product_image" id="ai_url"
-                           placeholder="https://images.unsplash.com/..."
+                           placeholder="e.g. product1.jpg"
                            oninput="previewImg('ai_prev', this.value)">
                     <div style="margin-top:9px">
                         <img id="ai_prev" src="../products/" style="width:80px;height:80px;border-radius:9px;object-fit:cover;border:1px solid var(--border);display:none" alt="">

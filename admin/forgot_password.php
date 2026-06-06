@@ -1,7 +1,9 @@
 <?php
 require_once 'includes/auth.php';
 require_once 'includes/db.php';
-require_once 'includes/mailer.php'; 
+require_once 'includes/mail.php'; 
+
+date_default_timezone_set('Asia/Kuala_Lumpur');
 
 // Already logged in → go to dashboard
 if (isLoggedIn()) {
@@ -26,50 +28,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db = getDB();
 
         // Check if admin exists
-        $st = $db->prepare("SELECT admin_id, username FROM admin WHERE username = ? LIMIT 1");
+        $st = $db->prepare("SELECT admin_id, username, email FROM admin WHERE username = ? LIMIT 1");
         $st->bind_param("s", $username);
         $st->execute();
         $admin = $st->get_result()->fetch_assoc();
 
         if ($admin) {
-            // Delete any old unused tokens for this user
-           $clean = $db->prepare("DELETE FROM password_resets WHERE username = ?");
-            $clean->bind_param("s", $username);
-            $clean->execute();
-
-            // Generate a secure random token
-            $token      = bin2hex(random_bytes(32)); // 64 character hex string
-            $expires_at = date('Y-m-d H:i:s', time() + 3600); // expires in 1 hour
-
-            // Save token to database
-            $st2 = $db->prepare("INSERT INTO password_resets (username, token, expires_at) VALUES (?, ?, ?)");
-            $st2->bind_param("sss", $username, $token, $expires_at);
-            $st2->execute();
-
-            // Build the reset link
-            $protocol   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $host       = $_SERVER['HTTP_HOST'];
-            $reset_link = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/reset password.php?token=' . $token;
-
- // SEND EMAIL 
-            $html_body = buildResetEmailHTML($username, $reset_link);
-            $result    = sendMail(
-                $email,              // recipient email (typed by admin)
-                $username,           // recipient name
-                'FreshMart Admin — Password Reset Request',
-                $html_body
-            );
-
-            if ($result['success']) {
-                $email_sent = true;
-                $success    = true;
+            if (strcasecmp($admin['email'], $email) !== 0) {
+                // Email doesn't match the username
+                $error = 'The email address does not match our records for that username.';
             } else {
-                // Email failed — store error but still show link for dev/demo
-                $email_error = $result['error'];
-                $success     = true;  // still mark success so reset link shows
+                // Delete any old unused tokens for this user
+                $clean = $db->prepare("DELETE FROM password_resets WHERE username = ?");
+                $clean->bind_param("s", $username);
+                $clean->execute();
+
+                // Generate a secure random token
+                $token      = bin2hex(random_bytes(32)); // 64 character hex string
+                $expires_at = date('Y-m-d H:i:s', time() + 3600); // expires in 1 hour
+
+                // Save token to database
+                $st2 = $db->prepare("INSERT INTO password_resets (username, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))");
+                $st2->bind_param("ss", $username, $token);
+                $st2->execute();
+
+                // Build the reset link
+                $protocol   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $host       = $_SERVER['HTTP_HOST'];
+                $reset_link = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/reset_password.php?token=' . $token;
+
+                // SEND EMAIL 
+                $html_body = buildResetEmailHTML($username, $reset_link);
+                $result    = sendMail(
+                    $admin['email'],    // recipient email (from database)
+                    $admin['username'],           // recipient name
+                    'Infinity Grocer Admin — Password Reset Request',
+                    $html_body
+                );
+
+                if ($result['success']) {
+                    $email_sent = true;
+                    $success    = true;
+                } else {
+                    // Email failed — store error but still show link for dev/demo
+                    $email_error = $result['error'];
+                    $success     = true;  // still mark success so reset link shows
+                }
             }
 
-        } else {
+            } else {
             // Username not found — show same message (security: don't reveal usernames)
             $success = true;
         }
@@ -81,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password — FreshMart Admin</title>
+    <title>Forgot Password — Infinity Grocer Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -359,7 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Brand -->
     <div class="brand">
         <div class="brand-icon">🛒</div>
-        <h1>FreshMart Admin</h1>
+        <h1>Infinity Grocer Admin</h1>
         <p>Password Recovery</p>
     </div>
 
@@ -452,7 +459,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            required>
                 </div>
                 <div style="font-size:11.5px;color:var(--text3);margin-top:5px">
-                    The reset link will be sent to this email address.
+                    The reset link will be sent to your email address if the username and email are correct.
                 </div>
             </div>
             <button type="submit" class="btn-submit">Send Reset Link →</button>

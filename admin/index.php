@@ -97,7 +97,7 @@ input::placeholder{color:#ccc}
           <input type="password" name="password" placeholder="••••••••" required>
         </div>
       </div>
-      <div class="forgot-wrap"><a href="forgot password.php" class="forgot-link">Forgot password?</a></div>
+      <div class="forgot-wrap"><a href="forgot_password.php" class="forgot-link">Forgot password?</a></div>
       <button type="submit" class="btn-login">Sign In →</button>
     </form>
     <div class="hint">

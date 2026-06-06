@@ -2,10 +2,10 @@
 // settings 
 define('MAIL_HOST',       'smtp.gmail.com');   
 define('MAIL_PORT',       587);                
-define('MAIL_USERNAME',   'your_email@gmail.com');   
-define('MAIL_PASSWORD',   'xxxx xxxx xxxx xxxx');    
-define('MAIL_FROM_EMAIL', 'your_email@gmail.com');   
-define('MAIL_FROM_NAME',  'FreshMart Admin');        
+define('MAIL_USERNAME',   'infinitygrocer7@gmail.com');   
+define('MAIL_PASSWORD',   'lfxd qida epnm wzxl');    
+define('MAIL_FROM_EMAIL', 'infinitygrocer7@gmail.com');   
+define('MAIL_FROM_NAME',  'Infinity Grocer Admin');        
 define('MAIL_ENCRYPTION', 'tls');             // 
 
 /**
@@ -19,7 +19,7 @@ define('MAIL_ENCRYPTION', 'tls');             //
  */
 function sendMail($to_email, $to_name, $subject, $body_html) {
 
-    $phpmailer_path = __DIR__ . '/../vendor/phpmailer/phpmailer/src/';
+    $phpmailer_path = __DIR__ . '/PHPMailer/';
 
     if (!file_exists($phpmailer_path . 'PHPMailer.php')) {
         return sendMailFallback($to_email, $to_name, $subject, $body_html);
@@ -83,7 +83,9 @@ function sendMailFallback($to_email, $to_name, $subject, $body_html) {
  * @return string            HTML email body
  */
 function buildResetEmailHTML($username, $reset_link) {
-    return '
+    return '<!DOCTYPE html>
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -101,7 +103,7 @@ function buildResetEmailHTML($username, $reset_link) {
           <td style="background:#1a5c38;padding:32px 40px;text-align:center">
             <div style="font-size:36px;margin-bottom:10px">🛒</div>
             <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;font-family:Georgia,serif">
-              FreshMart Admin
+              Infinity Grocer Admin
             </h1>
             <p style="margin:6px 0 0;color:rgba(255,255,255,.6);font-size:13px">
               Password Reset Request
@@ -116,7 +118,7 @@ function buildResetEmailHTML($username, $reset_link) {
               Hello, ' . htmlspecialchars($username) . ' 👋
             </p>
             <p style="margin:0 0 24px;font-size:14px;color:#5a6a5e;line-height:1.7">
-              We received a request to reset the password for your FreshMart Admin account.
+              We received a request to reset the password for your Infinity Grocer Admin account.
               Click the button below to set a new password.
             </p>
 
@@ -156,7 +158,7 @@ function buildResetEmailHTML($username, $reset_link) {
 
             <p style="margin:0;font-size:13px;color:#8a9a8e;line-height:1.6">
               For security, never share this link with anyone.<br>
-              — The FreshMart Admin Team
+              — The Infinity Grocer Admin Team
             </p>
           </td>
         </tr>
@@ -165,7 +167,7 @@ function buildResetEmailHTML($username, $reset_link) {
         <tr>
           <td style="background:#f4f6f3;padding:18px 40px;text-align:center;border-top:1px solid #e4e8e2">
             <p style="margin:0;font-size:11px;color:#aaa">
-              © ' . date('Y') . ' FreshMart Online Grocery · Student C Admin Module<br>
+              © ' . date('Y') . ' Infinity Grocer · Student C Admin Module<br>
               This is an automated email, please do not reply.
             </p>
           </td>
@@ -178,4 +180,3 @@ function buildResetEmailHTML($username, $reset_link) {
 </body>
 </html>';
 }
-?>

@@ -8,25 +8,26 @@ $page_title='Manage Admins';
 if($_SERVER['REQUEST_METHOD']==='POST'){
     $action=  $_POST['action']??'';
     $username=sanitize($_POST['username']??'');
+    $email=   sanitize($_POST['email']??'');
     $password=$_POST['password']??'';
     $role=    in_array($_POST['role']??'',['admin','superadmin'])?$_POST['role']:'admin';
-
+    
     if($action==='add'){
         if(!$username||!$password) redirect('admins.php','Username and password required.','error');
         $hash=password_hash($password,PASSWORD_DEFAULT);
-        $st=$db->prepare("INSERT INTO admin (username,password,admin_role) VALUES (?,?,?)");
-        $st->bind_param("sss",$username,$hash,$role);
+        $st=$db->prepare("INSERT INTO admin (username,email,password,admin_role) VALUES (?,?,?,?,?)");
+        $st->bind_param("ssss",$username,$email,$hash,$role);
         $st->execute()?redirect('admins.php',"Admin '$username' added!"):redirect('admins.php','Username already exists.','error');
     }elseif($action==='edit'){
         $id=(int)$_POST['admin_id'];
         if($id===$_SESSION['admin_id']&&$role!=='superadmin') redirect('admins.php','Cannot demote yourself.','error');
         if($password){
             $hash=password_hash($password,PASSWORD_DEFAULT);
-            $st=$db->prepare("UPDATE admin SET username=?,password=?,admin_role=? WHERE admin_id=?");
-            $st->bind_param("sssi",$username,$hash,$role,$id);
+            $st=$db->prepare("UPDATE admin SET username=?,email=?,password=?,admin_role=? WHERE admin_id=?");
+            $st->bind_param("ssssi",$username,$email,$hash,$role,$id);
         }else{
-            $st=$db->prepare("UPDATE admin SET username=?,admin_role=? WHERE admin_id=?");
-            $st->bind_param("ssi",$username,$role,$id);
+            $st=$db->prepare("UPDATE admin SET username=?,email=?,admin_role=? WHERE admin_id=?");
+            $st->bind_param("sssi",$username,$email,$role,$id);
         }
         $st->execute();
         redirect('admins.php','Admin updated!');
@@ -52,9 +53,9 @@ require_once '../includes/header.php';
 </div>
 <div class="card">
   <div class="tbl-wrap"><table>
-    <thead><tr><th>#</th><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+    <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
     <tbody>
-    <?php if(empty($rows)): ?><tr><td colspan="5"><div class="empty-state"><div class="ei">🔑</div><p>No admins</p></div></td></tr>
+    <?php if(empty($rows)): ?><tr><td colspan="6"><div class="empty-state"><div class="ei">🔑</div><p>No admins</p></div></td></tr>
     <?php else: $i=1;foreach($rows as $a): $self=($a['admin_id']==$_SESSION['admin_id']); ?>
     <tr>
       <td style="color:var(--text3)"><?= $i++ ?></td>
@@ -62,6 +63,7 @@ require_once '../includes/header.php';
         <div style="width:38px;height:38px;border-radius:50%;background:<?= $a['admin_role']==='superadmin'?'var(--purple-bg)':'var(--green-bg)' ?>;border:2px solid <?= $a['admin_role']==='superadmin'?'#ddd6fe':'var(--green3)' ?>;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:<?= $a['admin_role']==='superadmin'?'var(--purple)':'var(--green)' ?>;flex-shrink:0"><?= strtoupper(substr($a['username'],0,1)) ?></div>
         <div><div style="font-weight:700"><?= sanitize($a['username']) ?></div><?php if($self): ?><div style="font-size:11px;color:var(--green);font-weight:600">← You</div><?php endif; ?></div>
       </div></td>
+      <td><?= sanitize($a['email']) ?></td>
       <td><span class="badge badge-<?= $a['admin_role'] ?>"><?= ucfirst($a['admin_role']) ?></span></td>
       <td style="color:var(--text3);font-size:12px"><?= date('d M Y H:i',strtotime($a['created_at'])) ?></td>
       <td><div style="display:flex;gap:7px">
@@ -86,6 +88,7 @@ require_once '../includes/header.php';
     <form method="POST"><input type="hidden" name="action" value="add">
       <div class="modal-body">
         <div class="form-group"><label>Username *</label><input type="text" name="username" required placeholder="e.g. admin2"></div>
+        <div class="form-group"><label>Email *</label><input type="email" name="email" required placeholder="e.g. admin2@example.com"></div>
         <div class="form-group"><label>Password *</label><input type="password" name="password" required placeholder="Min 6 characters"></div>
         <div class="form-group"><label>Role</label>
           <select name="role"><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select>
@@ -104,6 +107,7 @@ require_once '../includes/header.php';
     <form method="POST"><input type="hidden" name="action" value="edit"><input type="hidden" name="admin_id" id="ea_id">
       <div class="modal-body">
         <div class="form-group"><label>Username *</label><input type="text" name="username" id="ea_un" required></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" id="ea_email" placeholder="e.g. admin2@example.com"></div>
         <div class="form-group"><label>New Password <span style="font-weight:400;text-transform:none;font-size:11px">(leave blank to keep)</span></label><input type="password" name="password" placeholder="••••••••"></div>
         <div class="form-group"><label>Role</label><select name="role" id="ea_role"><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select></div>
       </div>
@@ -115,6 +119,7 @@ require_once '../includes/header.php';
 function editAdmin(a){
   document.getElementById('ea_id').value=a.admin_id;
   document.getElementById('ea_un').value=a.username;
+  document.getElementById('ea_email').value=a.email;
   document.getElementById('ea_role').value=a.admin_role;
   openModal('editM');
 }
