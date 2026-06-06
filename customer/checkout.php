@@ -125,7 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             $_SESSION['temp_total'] = $grandTotal;
             header('Location: tng_payment.php');
             exit;
-        } elseif ($payment_method === 'Cash On Delivery') {
+            
+        // commenting out COB option due to if customer select COD but not at home, it will cause problem for delivery and customer service
+        /*} elseif ($payment_method === 'Cash On Delivery') {
                 
                 // stock validation
                 foreach ($cart_items as $item) {
@@ -183,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                     } catch (Exception $e) {
                         $error = "System Error: " . $e->getMessage();
                     }
-                }
+                }*/
             } else {
                 $error = "Invalid payment method selected.";
             }
@@ -286,7 +288,7 @@ $address_result = $stmt_addr->get_result();
                             <select name="payment_method" id="payment_method">
                                 <option value="">-- Select Method --</option>
                                 <option value="Credit/Debit Card">Credit/Debit Card</option>
-                                <option value="Cash On Delivery">Cash on Delivery</option>
+                                <!-- <option value="Cash On Delivery">Cash on Delivery</option> -->
                                 <option value="Touch 'n Go E-Wallet">Touch 'n Go E-Wallet</option>
                             </select>
                         </div>
