@@ -18,26 +18,19 @@ $email_error  = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitize($_POST['username'] ?? '');
-    $email    = sanitize($_POST['email']    ?? '');
 
-   if (empty($username) || empty($email)) {
-        $error = 'Please enter both your username and email address.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Please enter a valid email address.';
+   if (empty($username)) {
+        $error = 'Please enter your username.';
     } else {
         $db = getDB();
 
         // Check if admin exists
-        $st = $db->prepare("SELECT admin_id, username, email FROM admin WHERE username = ? LIMIT 1");
+        $st = $db->prepare("SELECT admin_id, username, email, admin_role FROM admin WHERE username = ? LIMIT 1");
         $st->bind_param("s", $username);
         $st->execute();
         $admin = $st->get_result()->fetch_assoc();
 
         if ($admin) {
-            if (strcasecmp($admin['email'], $email) !== 0) {
-                // Email doesn't match the username
-                $error = 'The email address does not match our records for that username.';
-            } else {
                 // Delete any old unused tokens for this user
                 $clean = $db->prepare("DELETE FROM password_resets WHERE username = ?");
                 $clean->bind_param("s", $username);
@@ -45,19 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Generate a secure random token
                 $token      = bin2hex(random_bytes(32)); // 64 character hex string
-                $expires_at = date('Y-m-d H:i:s', time() + 3600); // expires in 1 hour
 
                 // Save token to database
                 $st2 = $db->prepare("INSERT INTO password_resets (username, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))");
                 $st2->bind_param("ss", $username, $token);
                 $st2->execute();
-
+        
                 // Build the reset link
                 $protocol   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
                 $host       = $_SERVER['HTTP_HOST'];
                 $reset_link = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/reset_password.php?token=' . $token;
 
-                // SEND EMAIL 
+                // Send to database email 
                 $html_body = buildResetEmailHTML($username, $reset_link);
                 $result    = sendMail(
                     $admin['email'],    // recipient email (from database)
@@ -66,6 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $html_body
                 );
 
+                // send to comapny email if superadmin
+                if ($admin['admin_role'] === 'superadmin') {
+                        $company_email = 'infinitygrocer7@gmail.com'; // replace with actual company email
+                    sendMail(
+                        $company_email,
+                        'Infinity Grocer Admin',
+                        'Infinity Grocer Admin — Password Reset Request',
+                        $html_body
+                    );
+                }
                 if ($result['success']) {
                     $email_sent = true;
                     $success    = true;
@@ -75,11 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $success     = true;  // still mark success so reset link shows
                 }
             }
-
-            } else {
-            // Username not found — show same message (security: don't reveal usernames)
-            $success = true;
-        }
     }
 }
 ?>
@@ -385,7 +382,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="token-box" style="background:var(--green-bg);border-color:var(--green3)">
             <div class="tb-label" style="color:var(--green)">✅ Email Sent Successfully</div>
             <div class="tb-link" style="color:var(--green2);font-family:inherit;font-size:13px">
-                Reset link sent to: <strong><?= htmlspecialchars($_POST['email'] ?? '') ?></strong>
+                <!--sent to database email-->
+                Reset link sent to: <strong> <?= htmlspecialchars($admin['email'] ?? '') ?> </strong>
+                <!--sent to company email if superadmin-->
+                <?php if ($admin['admin_role'] === 'superadmin'): ?>
+                    <br>Also sent to company email: <strong><?= $company_email ?></strong>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -447,19 +449,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            placeholder="Enter your username"
                            value="<?= sanitize($_POST['username'] ?? '') ?>"
                            required autofocus>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Your Email Address</label>
-                <div class="input-wrap">
-                    <span class="input-icon">✉️</span>
-                    <input type="email" name="email"
-                           placeholder="Enter your email address"
-                           value="<?= sanitize($_POST['email'] ?? '') ?>"
-                           required>
-                </div>
-                <div style="font-size:11.5px;color:var(--text3);margin-top:5px">
-                    The reset link will be sent to your email address if the username and email are correct.
                 </div>
             </div>
             <button type="submit" class="btn-submit">Send Reset Link →</button>

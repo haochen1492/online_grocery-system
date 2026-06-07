@@ -198,26 +198,10 @@ exit;
         $db->query("DELETE FROM admin WHERE admin_id=$id");
         redirect('admins.php','Admin deleted.','info');
         exit;
+    } else {
+        redirect('admins.php', 'Admin not found.', 'error');
     }
-     elseif ($action === 'resend_verification') {
-        $id = (int)$_POST['admin_id'];
-        $stmt = $db->prepare("SELECT email, username FROM admin WHERE admin_id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $admin = $stmt->get_result()->fetch_assoc();
-
-        if ($admin) {
-            $newToken = bin2hex(random_bytes(32));
-            $db->prepare("UPDATE admin SET verification_token = ? WHERE admin_id = ?")
-               ->execute([$newToken, $id]);
-
-            sendVerificationEmail($admin['email'], $admin['username'], $newToken);
-            redirect('admins.php', 'Verification email sent again.');
-        } else {
-            redirect('admins.php', 'Admin not found.', 'error');
-        }
-        exit;
-    }
+    exit;
 }
 $rows=[];$r=$db->query("SELECT * FROM admin ORDER BY created_at DESC");
 while($x=$r->fetch_assoc())$rows[]=$x;
@@ -249,13 +233,6 @@ require_once '../includes/header.php';
       <td style="color:var(--text3);font-size:12px"><?= date('d M Y H:i',strtotime($a['created_at'])) ?></td>
       <td><div style="display:flex;gap:7px">
         <button class="btn btn-orange btn-sm" onclick='editAdmin(<?= json_encode($a) ?>)'>✏️ Edit</button>
-        <?php if ($a['email_verified'] == 0): ?>
-            <form method="POST" style="display:inline;">
-                <input type="hidden" name="action" value="resend_verification">
-                <input type="hidden" name="admin_id" value="<?= $a['admin_id'] ?>">
-                <button type="submit" class="btn btn-warning btn-sm">Resend Link</button>
-            </form>
-        <?php endif; ?>
         <?php if(!$self): ?>
         <form method="POST" style="display:inline" onsubmit="return confirm('Delete <?= addslashes(sanitize($a['username'])) ?>?')">
           <input type="hidden" name="action" value="delete"><input type="hidden" name="admin_id" value="<?= $a['admin_id'] ?>">
