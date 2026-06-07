@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS admin (
     verification_token VARCHAR(64) NULL
 );
 
-INSERT INTO admin(username, email, password, email_verified, admin_role) VALUES ('superadmin', 'hcwmmt0114@gmail.com' , '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 1, 'superadmin');
+INSERT INTO admin(username, email, password, email_verified, admin_role) VALUES ('superadmin', 'hcwmmt0114@gmail.com' , 'superadmin123', 1, 'superadmin');
 
 CREATE TABLE IF NOT EXISTS categories (
     category_id INT PRIMARY KEY AUTO_INCREMENT,
