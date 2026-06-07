@@ -35,7 +35,13 @@ if (isset($_POST['update_profile'])) {
     if (!ctype_digit($phone)) {
         $message = "Error: Phone column only accepts numbers.";
         $message_type = "alert-error";
-    } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+    }   else if (strlen($phone) < 10 || strlen($phone) > 11) {
+        $message = "Error: Phone number must be between 10 to 11 digits.";
+        $message_type = "alert-error";
+    }   else if (!preg_match('/^01\d{8,9}$/', $phone)) {
+        $message = "Error: Phone number must start with '01' followed by 8 or 9 digits.";
+        $message_type = "alert-error";
+    }   elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
         $message = "Please enter a valid email address.";
         $message_type = "alert-error";
     } else {
