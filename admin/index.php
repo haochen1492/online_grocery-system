@@ -11,11 +11,26 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $st=$db->prepare("SELECT * FROM admin WHERE username=? LIMIT 1");
         $st->bind_param("s",$u);$st->execute();
         $row=$st->get_result()->fetch_assoc();
-        if($row&&password_verify($p,$row['password'])){
-            $_SESSION['admin_id']=$row['admin_id'];
-            $_SESSION['admin_username']=$row['username'];
-            $_SESSION['admin_role']=$row['admin_role'];
-            redirect('pages/dashboard.php','Welcome back, '.$row['username'].'! 👋');
+       if ($row && password_verify($password, $row['password'])) {
+
+    if (!$row['email_verified']) {
+        $error =
+        'Please verify your email before logging in.';
+    } else {
+
+        $_SESSION['admin_id']
+            = $row['admin_id'];
+
+        $_SESSION['admin_username']
+            = $row['username'];
+
+        $_SESSION['admin_role']
+            = $row['admin_role'];
+
+        redirect(
+            'pages/dashboard.php',
+            'Welcome back!'
+        );
         }else $error='Invalid username or password.';
     }else $error='Please enter both fields.';
 }
