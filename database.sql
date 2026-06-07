@@ -136,3 +136,6 @@ ALTER TABLE addresses ADD COLUMN active boolean NOT NULL DEFAULT true AFTER coun
 ALTER TABLE products ADD COLUMN active boolean NOT NULL DEFAULT true AFTER product_image;
 
 ALTER TABLE admin ADD COLUMN email VARCHAR(255) NOT NULL UNIQUE AFTER username;
+
+ALTER TABLE admin
+ADD COLUMN verification_token VARCHAR(64) NULL;
