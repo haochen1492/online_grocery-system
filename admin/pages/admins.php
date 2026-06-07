@@ -16,20 +16,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
    if($action==='add'){
 
     if(!$username || !$password || !$email){
-        redirect(
-            'admins.php',
-            'Username, email, and password required.',
-            'error'
+        redirect('admins.php','Username, email, and password required.','error'
         );
         exit;
     }
 
     if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
         redirect(
-            'admins.php',
-            'Invalid email format. Please enter a valid email address.',
-            'error'
+            'admins.php','Invalid email format. Please enter a valid email address.','error'
         );
+        exit;
+    }
+
+    $domain = substr(strrchr($email, "@"), 1);
+    if (!checkdnsrr($domain, "MX")) {
+        redirect('admins.php', 'The email domain does not exist or cannot receive mail.', 'error');
         exit;
     }
 
@@ -98,6 +99,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             'admins.php',
             "Admin '$username' added. Verification email sent!"
         );
+        exit;
 
     } else {
 
@@ -108,6 +110,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 'Email already exists. Please use a different email address.',
                 'error'
             );
+            exit;
 
         } else {
 
@@ -116,15 +119,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 'Error adding admin.',
                 'error'
             );
+            exit;
 
         }
     }
-}
     }elseif($action==='edit'){
         $id=(int)$_POST['admin_id'];
         $current=$db->prepare(
     "SELECT email FROM admin WHERE admin_id=?"
     );
+
+
 
     $current->bind_param("i",$id);
     $current->execute();
@@ -146,6 +151,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             redirect('admins.php','Email already used on another admin. Please use a different email address.','error');
             exit;
         }
+        //check if email domain exists
+        $domain = substr(strrchr($email, "@"), 1);
+        if (!checkdnsrr($domain, "MX")) {
+            redirect('admins.php', 'The email domain does not exist or cannot receive mail.', 'error');
+            exit;
+        }
         if($id===$_SESSION['admin_id']&&$role!=='superadmin') {
           redirect('admins.php','Cannot demote yourself.','error');
           exit;
@@ -161,6 +172,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
        $st->execute();
 
 if($emailChanged){
+  $token = bin2hex(random_bytes(32));
+  $db->query("UPDATE admin SET email_verified=0, verification_token='$token' WHERE admin_id=$id");
 
     sendVerificationEmail(
         $email,
@@ -172,17 +185,38 @@ if($emailChanged){
 
         session_destroy();
 
-        header('Location: ../index.php');
+        header('Location: ../index.php?msg=verify_required');
         exit;
     }
 }
 
 redirect('admins.php','Admin updated!');
+exit;
     }elseif($action==='delete'){
         $id=(int)$_POST['admin_id'];
         if($id===$_SESSION['admin_id']) redirect('admins.php','Cannot delete your own account.','error');
         $db->query("DELETE FROM admin WHERE admin_id=$id");
         redirect('admins.php','Admin deleted.','info');
+        exit;
+    }
+     elseif ($action === 'resend_verification') {
+        $id = (int)$_POST['admin_id'];
+        $stmt = $db->prepare("SELECT email, username FROM admin WHERE admin_id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $admin = $stmt->get_result()->fetch_assoc();
+
+        if ($admin) {
+            $newToken = bin2hex(random_bytes(32));
+            $db->prepare("UPDATE admin SET verification_token = ? WHERE admin_id = ?")
+               ->execute([$newToken, $id]);
+
+            sendVerificationEmail($admin['email'], $admin['username'], $newToken);
+            redirect('admins.php', 'Verification email sent again.');
+        } else {
+            redirect('admins.php', 'Admin not found.', 'error');
+        }
+        exit;
     }
 }
 $rows=[];$r=$db->query("SELECT * FROM admin ORDER BY created_at DESC");
@@ -215,6 +249,13 @@ require_once '../includes/header.php';
       <td style="color:var(--text3);font-size:12px"><?= date('d M Y H:i',strtotime($a['created_at'])) ?></td>
       <td><div style="display:flex;gap:7px">
         <button class="btn btn-orange btn-sm" onclick='editAdmin(<?= json_encode($a) ?>)'>✏️ Edit</button>
+        <?php if ($a['email_verified'] == 0): ?>
+            <form method="POST" style="display:inline;">
+                <input type="hidden" name="action" value="resend_verification">
+                <input type="hidden" name="admin_id" value="<?= $a['admin_id'] ?>">
+                <button type="submit" class="btn btn-warning btn-sm">Resend Link</button>
+            </form>
+        <?php endif; ?>
         <?php if(!$self): ?>
         <form method="POST" style="display:inline" onsubmit="return confirm('Delete <?= addslashes(sanitize($a['username'])) ?>?')">
           <input type="hidden" name="action" value="delete"><input type="hidden" name="admin_id" value="<?= $a['admin_id'] ?>">

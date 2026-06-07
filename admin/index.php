@@ -11,28 +11,27 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $st=$db->prepare("SELECT * FROM admin WHERE username=? LIMIT 1");
         $st->bind_param("s",$u);$st->execute();
         $row=$st->get_result()->fetch_assoc();
-       if ($row && password_verify($password, $row['password'])) {
+       if ($row && password_verify($p, $row['password'])) {
+        //superadmin can login without email verification, but other admins must verify email first
+        if ($row['admin_role'] !=='superadmin' && $row['email_verified'] == 0) {
+            $error =
+            'Please verify your email before logging in.';
+        } else {
+            $_SESSION['admin_id']= $row['admin_id'];
+            $_SESSION['admin_username']= $row['username'];
+            $_SESSION['admin_role'] = $row['admin_role'];
 
-    if (!$row['email_verified']) {
-        $error =
-        'Please verify your email before logging in.';
-    } else {
-
-        $_SESSION['admin_id']
-            = $row['admin_id'];
-
-        $_SESSION['admin_username']
-            = $row['username'];
-
-        $_SESSION['admin_role']
-            = $row['admin_role'];
-
-        redirect(
-            'pages/dashboard.php',
-            'Welcome back!'
-        );
-        }else $error='Invalid username or password.';
-    }else $error='Please enter both fields.';
+            redirect(
+                'pages/dashboard.php',
+                'Welcome back!'
+            );
+            exit;
+        }
+            }else {
+              $error='Invalid username or password.';
+            }
+        }
+          else $error='Please enter both fields.';
 }
 ?>
 <!DOCTYPE html><html lang="en"><head>
@@ -116,4 +115,5 @@ input::placeholder{color:#ccc}
     <p class="copy">© <?= date('Y') ?> Infinity Grocer</p>
   </div>
 </div>
-</body></html>
+</body>
+</html>

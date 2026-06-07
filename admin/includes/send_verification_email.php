@@ -3,12 +3,14 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/PHPMailer/PHPMailer.php';
+require_once __DIR__ . '/PHPMailer/SMTP.php';
+require_once __DIR__ . '/PHPMailer/Exception.php';
 
 function sendVerificationEmail($email, $username, $token)
 {
     $verifyLink =
-        "http://localhost/InfinityGrocer/admin/verify.php?token=" . $token;
+        "http://localhost/online_grocery-system/admin/verify.php?token=" . $token;
 
     $mail = new PHPMailer(true);
 
@@ -17,13 +19,13 @@ function sendVerificationEmail($email, $username, $token)
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'yourgmail@gmail.com';
-        $mail->Password   = 'your-app-password';
+        $mail->Username   = 'infinitygrocer7@gmail.com';
+        $mail->Password   = 'lfxd qida epnm wzxl';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
         $mail->setFrom(
-            'yourgmail@gmail.com',
+            'infinitygrocer7@gmail.com',
             'Infinity Grocer'
         );
 

@@ -7,11 +7,13 @@ CREATE TABLE IF NOT EXISTS admin (
     username VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    email_verified INT(1) DEFAULT 0,
     admin_role enum('superadmin', 'admin') NOT NULL DEFAULT 'admin',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    verification_token VARCHAR(64) NULL
 );
 
-INSERT INTO admin(username, email, password, admin_role) VALUES ('superadmin', '@gmail.com' , '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 'superadmin');
+INSERT INTO admin(username, email, password, email_verified, admin_role) VALUES ('superadmin', 'hcwmmt0114@gmail.com' , '$2y$13$kbVuAKDN7Bor2XWBxKiLQe9oJja5GhXtZmEsD6lTRDHWyRWcZa//O', 1, 'superadmin');
 
 CREATE TABLE IF NOT EXISTS categories (
     category_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -137,5 +139,6 @@ ALTER TABLE products ADD COLUMN active boolean NOT NULL DEFAULT true AFTER produ
 
 ALTER TABLE admin ADD COLUMN email VARCHAR(255) NOT NULL UNIQUE AFTER username;
 
-ALTER TABLE admin
-ADD COLUMN verification_token VARCHAR(64) NULL;
+alter table admin add column email_verified INT(1) DEFAULT 0 after password;
+
+ALTER TABLE admin ADD COLUMN verification_token VARCHAR(64) NULL;
