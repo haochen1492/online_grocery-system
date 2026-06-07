@@ -2,6 +2,14 @@
 include '../includes/dbconnect.php';
 session_start();
 
+// Import PHPMailer classes into the global namespace
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require '../vendor/phpmailer/Exception.php';
+require '../vendor/phpmailer/PHPMailer.php';
+require '../vendor/phpmailer/SMTP.php';
+
 // Redirect to login if not authenticated
 if (!isset($_SESSION['customer_id'])) {
     header("Location: login.php");
@@ -12,22 +20,121 @@ $user_id = $_SESSION['customer_id'];
 $message = "";
 $message_type = "alert-success"; 
 
-// 1. HANDLE PROFILE INFORMATION UPDATE
+// Fetch current user data first so we can check the existing email
+$stmt = $conn->prepare("SELECT * FROM customers WHERE customer_id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user_data = $stmt->get_result()->fetch_assoc();
+
+// 1. HANDLE PROFILE INFORMATION UPDATE WITH EMAIL VERIFICATION
 if (isset($_POST['update_profile'])) {
     $name = $_POST['name'];
     $phone = $_POST['phone'];
+    $new_email = trim($_POST['email']);
     
     if (!ctype_digit($phone)) {
         $message = "Error: Phone column only accepts numbers.";
         $message_type = "alert-error";
+    } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+        $message = "Please enter a valid email address.";
+        $message_type = "alert-error";
     } else {
-        $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_phone = ? WHERE customer_id = ?");
-        $stmt->bind_param("ssi", $name, $phone, $user_id);
-        if ($stmt->execute()) {
-            $message = "Profile updated successfully!";
+        // Fetch current email directly from DB right now to guarantee accuracy
+        $email_check_stmt = $conn->prepare("SELECT customer_email FROM customers WHERE customer_id = ?");
+        $email_check_stmt->bind_param("i", $user_id);
+        $email_check_stmt->execute();
+        $res = $email_check_stmt->get_result()->fetch_assoc();
+        $current_email = $res['customer_email'];
+        $email_check_stmt->close();
+
+        // Check if the email address was actually changed
+        if (strtolower(trim($new_email)) !== strtolower(trim($current_email))) {
+            
+            // Check if the new email is already taken by another user
+            $check = $conn->prepare("SELECT customer_id FROM customers WHERE customer_email = ? AND customer_id != ?");
+            $check->bind_param("si", $new_email, $user_id);
+            $check->execute();
+            $check->store_result();
+
+            if ($check->num_rows > 0) {
+                $message = "This email is already registered by another account!";
+                $message_type = "alert-error";
+                $check->close();
+            } else {
+                $check->close();
+                
+                // Start transaction
+                $conn->begin_transaction();
+
+                try {
+                    // BUG FIX: Update ONLY name and phone here. DO NOT change customer_email yet!
+                    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_phone = ? WHERE customer_id = ?");
+                    $stmt->bind_param("ssi", $name, $phone, $user_id);
+                    $stmt->execute();
+
+                    // Generate 6-Digit OTP
+                    $otp_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+
+                    // Save or Update OTP along with the customer_id so verify_otp.php knows who requested it
+                    // Ensure your register_verify table can track this, or pass it via the email identity structure.
+                    $otp_stmt = $conn->prepare("INSERT INTO register_verify (email, otp_code) VALUES (?, ?) ON DUPLICATE KEY UPDATE otp_code = ?, created_at = CURRENT_TIMESTAMP");
+                    $otp_stmt->bind_param("sss", $new_email, $otp_code, $otp_code);
+                    $otp_stmt->execute();
+
+                    // Send OTP via PHPMailer
+                    $mail = new PHPMailer(true);
+
+                    // Server configurations
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'infinitygrocer7@gmail.com';       
+                    $mail->Password   = 'lfxd qida epnm wzxl'; 
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = 587;
+
+                    // Recipients
+                    $mail->setFrom('infinitygrocer7@gmail.com', 'Infinity Grocer');
+                    $mail->addAddress($new_email, $name);
+
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Verify Your New Email - Infinity Grocer';
+                    $mail->Body    = "<h3>Hello $name!</h3>
+                                      <p>You requested to change your profile email address.</p>
+                                      <p>Your OTP code for verification is: <b>$otp_code</b></p>
+                                      <p>This code will expire shortly.</p>";
+
+                    $mail->send();
+                    
+                    $conn->commit();
+
+                    // Redirect to OTP Verification page
+                    header("Location: verify_otp.php?email=" . urlencode($new_email));
+                    exit();
+
+                } catch (Exception $e) {
+                    $conn->rollback();
+                    $message = "Failed to send verification email. Mailer Error: {$mail->ErrorInfo}";
+                    $message_type = "alert-error";
+                } catch (mysqli_sql_exception $e) {
+                    $conn->rollback();
+                    $message = "Profile update failed. Please try again.";
+                    $message_type = "alert-error";
+                }
+            }
+            
         } else {
-            $message = "Error updating profile.";
-            $message_type = "alert-error";
+            // Email didn't change, just update Name and Phone normally
+            $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_phone = ? WHERE customer_id = ?");
+            $stmt->bind_param("ssi", $name, $phone, $user_id);
+            if ($stmt->execute()) {
+                $message = "Profile updated successfully!";
+            } else {
+                $message = "Error updating profile.";
+                $message_type = "alert-error";
+            }
+            $stmt->close();
         }
     }
 }
@@ -179,9 +286,9 @@ $states = [
             <label>Phone Number</label>
             <input type="text" name="phone" id="phone_input" oninput="validatePhoneOnly()" value="<?php echo htmlspecialchars($user_data['customer_phone']); ?>" required>
             
-            <label>Email (Cannot be changed)</label>
-            <input type="email" value="<?php echo htmlspecialchars($user_data['customer_email']); ?>" disabled style="background:#eee;">
-            
+            <label>Email Address (Changing your email requires re-verification)</label>
+            <input type="email" name="email" value="<?php echo htmlspecialchars($user_data['customer_email']); ?>" required>
+
             <button type="submit" name="update_profile" class="btn-save" style="background-color: #329b18;">Update Info</button>
         </form>
     </div>

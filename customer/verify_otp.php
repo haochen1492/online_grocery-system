@@ -19,27 +19,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $row = $result->fetch_assoc();
         
         if ($row['otp_code'] === $otp_input) {
-            // OTP Matches! Update customer status to verified
-            $update = $conn->prepare("UPDATE customers SET is_verified = 1 WHERE customer_email = ?");
-            $update->bind_param("s", $email);
             
-            if ($update->execute()) {
+            // Start transaction to change email safely
+            $conn->begin_transaction();
+            
+            try {
+                if (isset($_SESSION['customer_id'])) {
+                    // BUG FIX: The user is updating their existing account email.
+                    // We finalize the change here now that the code matches!
+                    $user_id = $_SESSION['customer_id'];
+                    $update = $conn->prepare("UPDATE customers SET customer_email = ?, is_verified = 1 WHERE customer_id = ?");
+                    $update->bind_param("si", $email, $user_id);
+                } else {
+                    // The user is a guest verifying their new registration signup
+                    $update = $conn->prepare("UPDATE customers SET is_verified = 1 WHERE customer_email = ?");
+                    $update->bind_param("s", $email);
+                }
+                
+                $update->execute();
+
                 // Delete the used OTP code record
                 $delete = $conn->prepare("DELETE FROM register_verify WHERE email = ?");
                 $delete->bind_param("s", $email);
                 $delete->execute();
 
-                // Send to login screen with success flag
-                header("Location: login.php?registration=success");
+                $conn->commit();
+
+                // Redirect based on session status
+                if (isset($_SESSION['customer_id'])) {
+                    header("Location: profile.php?email_update=success");
+                } else {
+                    header("Location: login.php?registration=success");
+                }
                 exit();
-            } else {
-                $error = "Verification processed but account setup failed.";
+
+            } catch (Exception $e) {
+                $conn->rollback();
+                $error = "Verification failed to save. Please try again.";
             }
         } else {
             $error = "Invalid OTP verification code. Please try again.";
         }
     } else {
-        $error = "No registration request found for this email address.";
+        $error = "No verification request found for this email address.";
     }
 }
 ?>
@@ -76,7 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </form>
 
     <p style="margin-top: 15px;">
-        Wrong email? <a href="register.php">Back to Register</a>
+        Wrong email? 
+        <?php if (isset($_SESSION['customer_id'])): ?>
+            <a href="profile.php">Back to Profile</a>
+        <?php else: ?>
+            <a href="register.php">Back to Register</a>
+        <?php endif; ?>
     </p>
 </div>
 
