@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
+require_once '../includes/send_verification_email.php';
 requireSuperAdmin();
 $db=getDB();
 $page_title='Manage Admins';
