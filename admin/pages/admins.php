@@ -13,36 +13,128 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $password=$_POST['password']??'';
     $role=    in_array($_POST['role']??'',['admin','superadmin'])?$_POST['role']:'admin';
     
-    if($action==='add'){
-        if(!$username||!$password||!$email) {
-          redirect('admins.php','Username, email, and password required.','error');exit;
-        }
-        if(!filter_var($email,FILTER_VALIDATE_EMAIL)) {
-          redirect('admins.php','Invalid email format. Please enter a valid email address.','error');
-          exit;
-        }
-        $hash=password_hash($password,PASSWORD_DEFAULT);
-        $st=$db->prepare("SELECT admin_id FROM admin WHERE username=?");
-        $st->bind_param("s",$username);
-        $st->execute();
-        $result=$st->get_result();
-        if($result->num_rows>0){
-            redirect('admins.php','Username already exists. Please choose a different username.','error');
-            exit;
-        }
-        $st=$db->prepare("INSERT INTO admin (username,email,password,admin_role) VALUES (?,?,?,?)");
-        $st->bind_param("ssss",$username,$email,$hash,$role);
-        if ($st->execute()){
-            redirect('admins.php',"Admin '$username' added!");
+   if($action==='add'){
+
+    if(!$username || !$password || !$email){
+        redirect(
+            'admins.php',
+            'Username, email, and password required.',
+            'error'
+        );
+        exit;
+    }
+
+    if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+        redirect(
+            'admins.php',
+            'Invalid email format. Please enter a valid email address.',
+            'error'
+        );
+        exit;
+    }
+
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+
+    $st = $db->prepare(
+        "SELECT admin_id FROM admin WHERE username=?"
+    );
+    $st->bind_param("s", $username);
+    $st->execute();
+
+    $result = $st->get_result();
+
+    if($result->num_rows > 0){
+        redirect(
+            'admins.php',
+            'Username already exists. Please choose a different username.',
+            'error'
+        );
+        exit;
+    }
+
+    // Generate verification token
+    $token = bin2hex(random_bytes(32));
+
+    $st = $db->prepare("
+        INSERT INTO admin
+        (
+            username,
+            email,
+            password,
+            admin_role,
+            email_verified,
+            verification_token
+        )
+        VALUES
+        (
+            ?,
+            ?,
+            ?,
+            ?,
+            0,
+            ?
+        )
+    ");
+
+    $st->bind_param(
+        "sssss",
+        $username,
+        $email,
+        $hash,
+        $role,
+        $token
+    );
+
+    if($st->execute()){
+
+        // Send verification email
+        sendVerificationEmail(
+            $email,
+            $username,
+            $token
+        );
+
+        redirect(
+            'admins.php',
+            "Admin '$username' added. Verification email sent!"
+        );
+
+    } else {
+
+        if($db->errno === 1062){
+
+            redirect(
+                'admins.php',
+                'Email already exists. Please use a different email address.',
+                'error'
+            );
+
         } else {
-          if($db->errno===1062) {
-            redirect('admins.php','Email already exists. Please use a different email address.','error');
-          } else {
-            redirect('admins.php','Error adding admin.','error');
-          }
+
+            redirect(
+                'admins.php',
+                'Error adding admin.',
+                'error'
+            );
+
         }
+    }
+}
     }elseif($action==='edit'){
         $id=(int)$_POST['admin_id'];
+        $current=$db->prepare(
+    "SELECT email FROM admin WHERE admin_id=?"
+    );
+
+    $current->bind_param("i",$id);
+    $current->execute();
+
+    $currentEmail=
+    $current->get_result()->fetch_assoc()['email'];
+
+    $emailChanged =
+    ($currentEmail !== $email);
+        
         if(empty($email) || !filter_var($email,FILTER_VALIDATE_EMAIL)){
             redirect('admins.php','Invalid email format. Please enter a valid email address.','error');
             exit;
@@ -66,8 +158,26 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $st=$db->prepare("UPDATE admin SET username=?,email=?,admin_role=? WHERE admin_id=?");
             $st->bind_param("sssi",$username,$email,$role,$id);
         }
-        $st->execute();
-        redirect('admins.php','Admin updated!');
+       $st->execute();
+
+if($emailChanged){
+
+    sendVerificationEmail(
+        $email,
+        $username,
+        $token
+    );
+
+    if($id == $_SESSION['admin_id']){
+
+        session_destroy();
+
+        header('Location: ../index.php');
+        exit;
+    }
+}
+
+redirect('admins.php','Admin updated!');
     }elseif($action==='delete'){
         $id=(int)$_POST['admin_id'];
         if($id===$_SESSION['admin_id']) redirect('admins.php','Cannot delete your own account.','error');
