@@ -13,14 +13,50 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $role=    in_array($_POST['role']??'',['admin','superadmin'])?$_POST['role']:'admin';
     
     if($action==='add'){
-        if(!$username||!$password) redirect('admins.php','Username and password required.','error');
+        if(!$username||!$password||!$email) {
+          redirect('admins.php','Username, email, and password required.','error');exit;
+        }
+        if(!filter_var($email,FILTER_VALIDATE_EMAIL)) {
+          redirect('admins.php','Invalid email format. Please enter a valid email address.','error');
+          exit;
+        }
         $hash=password_hash($password,PASSWORD_DEFAULT);
-        $st=$db->prepare("INSERT INTO admin (username,email,password,admin_role) VALUES (?,?,?,?,?)");
+        $st=$db->prepare("SELECT admin_id FROM admin WHERE username=?");
+        $st->bind_param("s",$username);
+        $st->execute();
+        $result=$st->get_result();
+        if($result->num_rows>0){
+            redirect('admins.php','Username already exists. Please choose a different username.','error');
+            exit;
+        }
+        $st=$db->prepare("INSERT INTO admin (username,email,password,admin_role) VALUES (?,?,?,?)");
         $st->bind_param("ssss",$username,$email,$hash,$role);
-        $st->execute()?redirect('admins.php',"Admin '$username' added!"):redirect('admins.php','Username already exists.','error');
+        if ($st->execute()){
+            redirect('admins.php',"Admin '$username' added!");
+        } else {
+          if($db->errno===1062) {
+            redirect('admins.php','Email already exists. Please use a different email address.','error');
+          } else {
+            redirect('admins.php','Error adding admin.','error');
+          }
+        }
     }elseif($action==='edit'){
         $id=(int)$_POST['admin_id'];
-        if($id===$_SESSION['admin_id']&&$role!=='superadmin') redirect('admins.php','Cannot demote yourself.','error');
+        if(empty($email) || !filter_var($email,FILTER_VALIDATE_EMAIL)){
+            redirect('admins.php','Invalid email format. Please enter a valid email address.','error');
+            exit;
+        }
+        $stmt=$db->prepare("SELECT * FROM admin WHERE email =? and admin_id !=?");
+        $stmt->bind_param("si",$email,$id);
+        $stmt->execute();
+        if($stmt->get_result()->num_rows>0){
+            redirect('admins.php','Email already used on another admin. Please use a different email address.','error');
+            exit;
+        }
+        if($id===$_SESSION['admin_id']&&$role!=='superadmin') {
+          redirect('admins.php','Cannot demote yourself.','error');
+          exit;
+        }
         if($password){
             $hash=password_hash($password,PASSWORD_DEFAULT);
             $st=$db->prepare("UPDATE admin SET username=?,email=?,password=?,admin_role=? WHERE admin_id=?");
@@ -88,7 +124,7 @@ require_once '../includes/header.php';
     <form method="POST"><input type="hidden" name="action" value="add">
       <div class="modal-body">
         <div class="form-group"><label>Username *</label><input type="text" name="username" required placeholder="e.g. admin2"></div>
-        <div class="form-group"><label>Email *</label><input type="email" name="email" required placeholder="e.g. admin2@example.com"></div>
+        <div class="form-group"><label>Email *</label><input type="email" name="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" placeholder="e.g. admin2@example.com"></div>
         <div class="form-group"><label>Password *</label><input type="password" name="password" required placeholder="Min 6 characters"></div>
         <div class="form-group"><label>Role</label>
           <select name="role"><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select>
@@ -107,7 +143,7 @@ require_once '../includes/header.php';
     <form method="POST"><input type="hidden" name="action" value="edit"><input type="hidden" name="admin_id" id="ea_id">
       <div class="modal-body">
         <div class="form-group"><label>Username *</label><input type="text" name="username" id="ea_un" required></div>
-        <div class="form-group"><label>Email</label><input type="email" name="email" id="ea_email" placeholder="e.g. admin2@example.com"></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" id="ea_email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" placeholder="e.g. admin2@example.com"></div>
         <div class="form-group"><label>New Password <span style="font-weight:400;text-transform:none;font-size:11px">(leave blank to keep)</span></label><input type="password" name="password" placeholder="••••••••"></div>
         <div class="form-group"><label>Role</label><select name="role" id="ea_role"><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select></div>
       </div>
