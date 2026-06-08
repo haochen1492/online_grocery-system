@@ -324,7 +324,7 @@ $states = [
                         <div style="display:flex; gap:10px; margin-bottom:8px;">
                             <div style="width: 30%;">
                                 <label style="font-size: 0.85em; color: #555;">Postcode</label>
-                                <input type="text" name="postal_code" class="edit-input" style="width:100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" value="<?php echo htmlspecialchars($addr['postal_code']); ?>" required>
+                                <input type="text" name="postal_code" class="edit-input" style="width:100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" value="<?php echo htmlspecialchars($addr['postal_code']); ?>" oninput="validatePostalCode(event)" required>
                             </div>
                             <div style="width: 70%;">
                                 <label style="font-size: 0.85em; color: #555;">City</label>
@@ -376,11 +376,11 @@ $states = [
         <?php endwhile; ?>
 
         <h4 style="margin-top:20px;">Add New Address</h4>
-        <form method="POST">
+        <form method="POST" onsubmit="return validateFormOnSubmit(event)">
             <input type="text" name="unit_no" placeholder="House No./Unit No./Block (e.g., Block A, 02-03 or No. 123)" required style="margin-bottom:5px; width:100%;">
             <input type="text" name="address_line1" placeholder="Street Name (e.g., Lorong X/XX, Bandar Sunway)" required style="margin-bottom:5px; width:100%;">
             <div style="display:flex; gap:5px; margin-bottom:5px;">
-                <input type="text" name="postal_code" placeholder="Postcode (e.g., 57000)" required style="width:30%;">
+                <input type="text" name="postal_code" placeholder="Postcode (e.g., 57000)" required style="width:30%;" oninput="validatePostalCode(event)">
                 <input type="text" name="city" placeholder="City (e.g., Petaling Jaya)" required style="width:70%;">
             </div>
             <div>
@@ -397,7 +397,7 @@ $states = [
 
     <div class="form-section">
         <h3>Security Settings</h3>
-        <form method="POST">
+        <form method="POST">>
             <label>Current Password</label>
             <div class="password-wrapper">
                 <input type="password" name="old_password" id="old_pass" required>
@@ -436,6 +436,11 @@ $states = [
 function validatePhoneOnly() {
     const phoneInput = document.getElementById('phone_input');
     phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '');
+    if (/^01\d{8,9}$/.test(phoneInput.value) ) {
+            phoneInput.setCustomValidity('');
+        } else {
+            phoneInput.setCustomValidity('Please enter a valid Malaysian phone number starting with 01 and should be 10 or 11 digits (e.g., 0123456789).');
+        }
 }
 
 function toggleSinglePass(fieldId, iconElement) {
@@ -448,6 +453,30 @@ function toggleSinglePass(fieldId, iconElement) {
         iconElement.textContent = "visibility_off";
     }
 }
+
+//postal code validation for address forms
+function validatePostalCode(event) {
+    const input = event.target; // This is the input field itself
+    
+    // Remove non-numeric characters
+    input.value = input.value.replace(/[^0-9]/g, '');
+    
+    // Optional: Visual feedback if it's not 5 digits yet
+    if (input.value.length > 5) {
+        input.value = input.value.slice(0, 5);
+    }
+}
+
+// Add this to your form submission to enforce the 5-digit rule
+function validateFormOnSubmit(event) {
+    const pc = event.target.querySelector('input[name="postal_code"]');
+    if (pc && pc.value.length !== 5) {
+        alert('Postal code must be exactly 5 digits.');
+        event.preventDefault();
+        return false;
+    }
+}
+
 
 function checkRequirements() {
     // Note: corrected from "regPassword" to "new_pass" to match HTML structure

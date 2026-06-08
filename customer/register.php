@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="error-msg" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 10px;"><?php echo $error; ?></div>
     <?php endif; ?>
 
-    <form method="POST">
+    <form method="POST" onsubmit="return registerValidate(event)">
         <label>Full Name:</label>
         <input type="text" name="name" required>
 
@@ -161,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="email" name="email" required>
 
         <label>Phone Number:</label>
-        <input type="text" name="phone" id="phoneInput" oninput="validatePhone()" required>
+        <input type="text" name="phone" id="phoneInput" required>
 
         <label>Password:</label>
         <div class="password-wrapper">
@@ -190,6 +190,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 <script>
+    function registerValidate(event) {
+        const phoneInput = document.getElementById('phoneInput').value;
+        if (!/^01\d{8,9}$/.test(phoneInput) ) {
+            alert('Please enter a valid Malaysian phone number starting with 01 and should be 10 or 11 digits (e.g., 0123456789).');
+            event.preventDefault();
+            return false;
+        }
+        return true;
+    }
 function checkRequirements() {
     var val = document.getElementById("regPassword").value;
     
@@ -211,11 +220,6 @@ function checkMatch() {
     } else {
         hint.style.display = "none";
     }
-}
-
-function validatePhone() {
-    var input = document.getElementById("phoneInput");
-    input.value = input.value.replace(/[^0-9]/g, ''); 
 }
 
 function toggleSinglePass(fieldId, iconElement) {
