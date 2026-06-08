@@ -3,7 +3,7 @@
 define('MAIL_HOST',       'smtp.gmail.com');   
 define('MAIL_PORT',       587);                
 define('MAIL_USERNAME',   'infinitygrocer7@gmail.com');   
-define('MAIL_PASSWORD',   'lfxd qida epnm wzxl');    
+define('MAIL_PASSWORD',   'ypgb sney hmqe hpmg');    
 define('MAIL_FROM_EMAIL', 'infinitygrocer7@gmail.com');   
 define('MAIL_FROM_NAME',  'Infinity Grocer Admin');        
 define('MAIL_ENCRYPTION', 'tls');             // 
