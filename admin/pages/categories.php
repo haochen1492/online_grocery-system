@@ -18,7 +18,7 @@ if(isset($_GET['delete'])){
     $id=(int)$_GET['delete'];
     $used=$db->query("SELECT COUNT(*) c FROM products WHERE active = 1 AND category_id=$id")->fetch_assoc()['c'];
     if($used>0)redirect('categories.php',"Cannot delete: $used product(s) use this category.",'error');
-    $db->query("DELETE FROM categories WHERE active = 1 AND category_id=$id");redirect('categories.php','Deleted.','info');
+    $db->query("DELETE FROM categories WHERE category_id=$id");redirect('categories.php','Deleted.','info');
 }
 $s=sanitize($_GET['search']??'');$w=$s?"WHERE c.category_name LIKE '%$s%'":'';
 $rows=[];$r=$db->query("SELECT c.*,COUNT(p.product_id) pc FROM categories c LEFT JOIN products p ON p.active = 1 AND c.category_id=p.category_id $w GROUP BY c.category_id ORDER BY c.category_name");

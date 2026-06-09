@@ -62,3 +62,4 @@ function sendVerificationEmail($email, $username, $token)
         return false;
     }
 }
+

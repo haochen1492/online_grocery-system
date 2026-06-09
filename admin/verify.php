@@ -1,64 +1,48 @@
 <?php
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once 'includes/db.php';
 
-require_once DIR . '/PHPMailer/PHPMailer.php';
-require_once DIR . '/PHPMailer/SMTP.php';
-require_once DIR . '/PHPMailer/Exception.php';
+$db = getDB();
 
-function sendVerificationEmail($email, $username, $token)
-{
-    $verifyLink =
-        "http://localhost/online_grocery-system/admin/verify.php?token=" . $token;
+$token = $_GET['token'] ?? '';
 
-    $mail = new PHPMailer(true);
+$stmt = $db->prepare("
+SELECT admin_id
+FROM admin
+WHERE verification_token = ?
+LIMIT 1
+");
 
-    try {
+$stmt->bind_param("s", $token);
+$stmt->execute();
 
-        $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = 'infinitygrocer7@gmail.com';
-        $mail->Password   = 'ypgb sney hmqe hpmg';
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
+$result = $stmt->get_result();
 
-        $mail->setFrom(
-            'infinitygrocer7@gmail.com',
-            'Infinity Grocer'
-        );
+if ($row = $result->fetch_assoc()) {
 
-        $mail->addAddress($email, $username);
+    $update = $db->prepare("
+    UPDATE admin
+    SET
+        email_verified = 1,
+        verification_token = NULL
+    WHERE admin_id = ?
+    ");
 
-        $mail->isHTML(true);
+    $update->bind_param(
+        "i",
+        $row['admin_id']
+    );
 
-        $mail->Subject = 'Verify Your Email Address';
+    $update->execute();
 
-        $mail->Body = "
-        <h2>Email Verification</h2>
+    echo "
+    <h2>Email Verified Successfully</h2>
+    <a href='index.php'>Login Now</a>
+    ";
 
-        <p>Hello {$username},</p>
+} else {
 
-        <p>Please verify your email address by clicking the button below.</p>
-
-        <p>
-            <a href='{$verifyLink}'
-               style='background:#1e6641;
-                      color:white;
-                      padding:10px 20px;
-                      text-decoration:none;
-                      border-radius:5px;'>
-               Verify Email
-            </a>
-        </p>
-
-        <p>If you did not request this, please ignore this email.</p>
-        ";
-
-        return $mail->send();
-
-    } catch (Exception $e) {
-        return false;
-    }
+    echo "
+    <h2>Invalid Verification Link</h2>
+    ";
 }
