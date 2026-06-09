@@ -9,21 +9,18 @@ $type  = '';
 if (empty($token)) {
     $result = 'invalid';
 } else {
-    // First check if it's an email change token (stored in pending_email_token)
     $st = $db->prepare("SELECT admin_id, username, verification_token FROM admin WHERE verification_token = ? LIMIT 1");
     $st->bind_param("s", $token);
     $st->execute();
     $row = $st->get_result()->fetch_assoc();
 
     if ($row) {
-        // Apply the pending email change
         $up = $db->prepare("UPDATE admin SET email = ?, email_verified = 1, verification_token = NULL WHERE admin_id = ?");
-        $up->bind_param("si", $row['pending_email'], $row['admin_id']);
+        $up->bind_param("si",$row['email'], $row['admin_id']);
         $up->execute();
         $type   = 'email_changed';
         $result = 'success';
     } else {
-        // Check if it's a new account verification token
         $st2 = $db->prepare("SELECT admin_id, username FROM admin WHERE verification_token = ? LIMIT 1");
         $st2->bind_param("s", $token);
         $st2->execute();
@@ -31,7 +28,7 @@ if (empty($token)) {
 
         if ($row2) {
             $up2 = $db->prepare("UPDATE admin SET email_verified = 1, verification_token = NULL WHERE admin_id = ?");
-            $up2->bind_param("i", $row2['admin_id']);
+            $up2->bind_param("i", $row['admin_id']);
             $up2->execute();
             $type   = 'verified';
             $result = 'success';
