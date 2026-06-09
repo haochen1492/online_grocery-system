@@ -9,7 +9,7 @@ $type  = '';
 if (empty($token)) {
     $result = 'invalid';
 } else {
-    $st = $db->prepare("SELECT admin_id, username, verification_token FROM admin WHERE verification_token = ? LIMIT 1");
+    $st = $db->prepare("SELECT * FROM admin WHERE verification_token = ? LIMIT 1");
     $st->bind_param("s", $token);
     $st->execute();
     $row = $st->get_result()->fetch_assoc();
@@ -28,7 +28,7 @@ if (empty($token)) {
 
         if ($row2) {
             $up2 = $db->prepare("UPDATE admin SET email_verified = 1, verification_token = NULL WHERE admin_id = ?");
-            $up2->bind_param("i", $row['admin_id']);
+            $up2->bind_param("i", $row2['admin_id']);
             $up2->execute();
             $type   = 'verified';
             $result = 'success';
