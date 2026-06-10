@@ -317,6 +317,14 @@ require_once '../includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+    document.querySelector('form').addEventListener('submit', function(event){
+        const from = new Date(document.querySelector('input[name="from"]').value);
+        const to = new Date(document.querySelector('input[name="to"]').value);
+        if (from > to) {
+            alert('From date cannot be later than To date.');
+            event.preventDefault();
+        }
+    });
 const categoryLabels = [
 <?php
 foreach($cat_rows as $c){
