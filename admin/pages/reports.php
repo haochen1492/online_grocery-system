@@ -224,6 +224,16 @@ require_once '../includes/header.php';
     </div>
 </div>
 
+<!-- SALES CHART -->
+<div class="card" style="margin-bottom:18px">
+    <div class="card-header">
+        <span class="card-title">📊 Sales by Category Graph</span>
+    </div>
+    <div class="card-body">
+        <canvas id="salesChart" height="100"></canvas>
+    </div>
+</div>
+
 <!-- ── TOP PRODUCTS ── -->
 <div class="card" style="margin-bottom:18px">
     <div class="card-header"><span class="card-title">🏆 Top Selling Products</span></div>
@@ -303,5 +313,50 @@ require_once '../includes/header.php';
     .card{box-shadow:none!important;border:1px solid #e0e0e0!important}
 }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const categoryLabels = [
+<?php
+foreach($cat_rows as $c){
+    echo "'" . addslashes($c['category_name']) . "',";
+}
+?>
+];
+
+const categoryRevenue = [
+<?php
+foreach($cat_rows as $c){
+    echo $c['total_rev'] . ",";
+}
+?>
+];
+
+new Chart(document.getElementById('salesChart'), {
+    type: 'bar',
+    data: {
+        labels: categoryLabels,
+        datasets: [{
+            label: 'Revenue (RM)',
+            data: categoryRevenue,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
 
 <?php require_once '../includes/footer.php'; ?>
