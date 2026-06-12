@@ -99,10 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             } catch (Exception $e) {
                 $conn->rollback();
-                $error = "Failed to send verification email. Mailer Error: {$mail->ErrorInfo}";
-            } catch (Exception $e) {
-                $conn->rollback();
-                $error = "Registration failed. Please try again.";
+                $error = "Registration failed or verification email could not be sent. Error: {$mail->ErrorInfo}";
             }
         }
         $check->close();

@@ -6,19 +6,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Search for the user in the database
-    $stmt = $conn->prepare("SELECT customer_id, customer_password FROM customers WHERE customer_email = ?");
+    // BUG FIX: Select 'is_verified' alongside customer data
+    $stmt = $conn->prepare("SELECT customer_id, customer_password, is_verified FROM customers WHERE customer_email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
+        
         // Verify the hashed password
         if (password_verify($password, $user['customer_password'])) {
-            $_SESSION['customer_id'] = $user['customer_id'];
-            header("Location: index.php"); 
-            exit();
+            
+            // BUG FIX: Check if the user has verified their email address
+            if ((int)$user['is_verified'] === 1) {
+                $_SESSION['customer_id'] = $user['customer_id'];
+                header("Location: index.php"); 
+                exit();
+            } else {
+                // If account is registered but not verified yet, redirect them back to OTP page
+                $error = "Your account is not verified yet. Please check your email for the OTP code or <a href='verify_otp.php?email=" . urlencode($email) . "'>verify here</a>.";
+            }
+            
         } else {
             $error = "Invalid email address or password.";
         }
