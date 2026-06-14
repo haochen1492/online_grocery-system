@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS addresses (
     city VARCHAR(255) NOT NULL,
     state VARCHAR(255) NOT NULL,
     postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(255) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
