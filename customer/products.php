@@ -10,29 +10,32 @@ $cat_result = $conn->query($cat_query);
 $category_id = isset($_GET['category_id']) ? $_GET['category_id'] : null;
 $search_query = isset($_GET['search']) ? $_GET['search'] : null;
 $active = 1;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit =16;
+$offset = ($page - 1) * $limit;
 
 // build product query based on filters
 if ($category_id && !empty($search_query)) {
     // Both Category AND Search used (e.g., searching "apple" inside "Fruits")
-    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = ? AND name LIKE ?");
+    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = ? AND name LIKE ? LIMIT ? OFFSET ?");
     $search_param = "%" . $search_query . "%";
-    $stmt->bind_param("iis", $category_id, $active, $search_param);
+    $stmt->bind_param("iisii", $category_id, $active, $search_param, $limit, $offset);
     
 } elseif ($category_id) {
     // Only Category clicked
-    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = ?");
-    $stmt->bind_param("ii", $category_id, $active);
+    $stmt = $conn->prepare("SELECT * FROM products WHERE category_id = ? AND active = ? LIMIT ? OFFSET ?");
+    $stmt->bind_param("iiii", $category_id, $active, $limit, $offset);
     
 } elseif (!empty($search_query)) {
     // Only Search typed
-    $stmt = $conn->prepare("SELECT * FROM products WHERE active = ? AND name LIKE ?");
+    $stmt = $conn->prepare("SELECT * FROM products WHERE active = ? AND name LIKE ? LIMIT ? OFFSET ?");
     $search_param = "%" . $search_query . "%";
-    $stmt->bind_param("is", $active, $search_param);
+    $stmt->bind_param("isii", $active, $search_param, $limit, $offset);
     
 } else {
     // Default: Show all active products
-    $stmt = $conn->prepare("SELECT * FROM products WHERE active = ?");
-    $stmt->bind_param("i", $active);
+    $stmt = $conn->prepare("SELECT * FROM products WHERE active = ? LIMIT ? OFFSET ?");
+    $stmt->bind_param("iii", $active, $limit, $offset);
 }
 
 // check stock quantity > 0 to show available stock or "Out of Stock"
@@ -45,6 +48,26 @@ while ($row = $stock_result->fetch_assoc()) {
 
 $stmt->execute();
 $product_result = $stmt->get_result();
+$stmt->free_result();
+
+//calculate total pages for pagination
+if ($category_id && !empty($search_query)) {
+    $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE category_id = ? AND active = ? AND name LIKE ?");
+    $count_stmt->bind_param("iis", $category_id, $active, $search_param);
+} elseif ($category_id) {
+    $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE category_id = ? AND active = ?");
+    $count_stmt->bind_param("ii", $category_id, $active);
+} elseif (!empty($search_query)) {
+    $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE active = ? AND name LIKE ?");
+    $count_stmt->bind_param("is", $active, $search_param);
+} else {
+    $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE active = ?");
+    $count_stmt->bind_param("i", $active);
+}
+
+$count_stmt->execute();
+$count_result = $count_stmt->get_result()->fetch_assoc();
+$total_pages = ceil($count_result['total'] / $limit);
 ?>
 
 <!DOCTYPE html>
@@ -111,6 +134,39 @@ $product_result = $stmt->get_result();
             font-weight: bold;
         }
         .btn-cart:hover { background: #287a13; }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 40px 0;
+        }
+
+        .pagination a {
+            text-decoration: none;
+            padding: 10px 18px;
+            border: 1px solid #329b18;
+            color: #329b18;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .pagination a:hover {
+            background-color: #329b18;
+            color: white;
+        }
+
+        .pagination span {
+            padding: 10px 15px;
+            color: #555;
+            font-weight: bold;
+        }
+        .pagination a.active {
+        background-color: #329b18;
+        color: white;
+        border-color: #329b18;
+    }
     </style>
 </head>
 <body>
@@ -154,6 +210,29 @@ $product_result = $stmt->get_result();
             <?php endwhile; ?>
         <?php else: ?>
             <p style="text-align: center; grid-column: 1 / -1;">No products found in this category.</p>
+        <?php endif; ?>
+    </div>
+    <div class="pagination">
+        <?php 
+        // Build query string helper to maintain filters
+        $query_string = "";
+        if($category_id) $query_string .= "&category_id=" . $category_id;
+        if($search_query) $query_string .= "&search=" . urlencode($search_query);
+        ?>
+
+        <?php if ($page > 1): ?>
+            <a href="?page=<?php echo $page - 1; ?><?php echo $query_string; ?>">« Previous</a>
+        <?php endif; ?>
+
+        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+            <a href="?page=<?php echo $i; ?><?php echo $query_string; ?>" 
+            class="<?php echo ($i == $page) ? 'active' : ''; ?>">
+            <?php echo $i; ?>
+            </a>
+        <?php endfor; ?>
+
+        <?php if ($page < $total_pages): ?>
+            <a href="?page=<?php echo $page + 1; ?><?php echo $query_string; ?>">Next »</a>
         <?php endif; ?>
     </div>
 </div>

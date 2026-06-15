@@ -24,6 +24,8 @@ INSERT INTO `categories`( `category_name`) VALUES ('Fruits');
 INSERT INTO `categories`( `category_name`) VALUES ('Snacks');
 INSERT INTO `categories`( `category_name`) VALUES ('Food Essentials');
 INSERT INTO `categories`( `category_name`) VALUES ('Beverages');
+INSERT INTO `categories`( `category_name`) VALUES ('Frozen');
+INSERT INTO `categories`( `category_name`) VALUES ('Breakfast');
 
 CREATE TABLE IF NOT EXISTS products (
     product_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -44,9 +46,18 @@ INSERT INTO `products` (`category_id`, `name`, `description`, `price`, `stock_qu
 (4, 'San Remo No.5 Spaghetti 500g', 'San Remo No.5 Spaghetti 500g', 5.00, 4,  'sanremospaghetti500g.jpg', 1),
 (1, 'Bok Choy (Sawi Putih) 350g', 'Bok Choy (Sawi Putih) 350g', 4.70, 49, 'bokchoy(sawiputih)350g.webp', 1),
 (3, 'Oriental Super Ring Family Pack 14g x 8', 'Oriental Super Ring Family Pack 14g x 8', 5.00, 99,  'oriental_super_ring_familypack14gx8.jpg', 1),
-(5, 'Yarra Farm Australian Pasteurized Cows Milk 1L', 'Yarra Farm Australian Pasteurized Cows Milk 1L', 8.20, 0,  'yarra_farm_cows_milk1L.jpg', 1);
-
-
+(5, 'Yarra Farm Australian Pasteurized Cows Milk 1L', 'Yarra Farm Australian Pasteurized Cows Milk 1L', 8.20, 0,  'yarra_farm_cows_milk1L.jpg', 1),
+(5, 'Coca-Cola Carbonated Drink 1.5L', 'Coca-Cola Carbonated Drink 1.5L', 4.40, 100,  'cocacola_ori1.5L.png', 1),
+(6, 'Simplot Hashbrown Original 637g', 'Simplot Hashbrown Original 637g', 15.90, 100, 'Simplot_Hashbrown_Original_637g.webp',1),
+(6, 'Figo Steamboat Choice 500g','Figo Steamboat Choice 500g', 12.40, 100,'Figo_Steamboat_Choice_500g.webp' , 1),
+(7, 'Quaker Instant Oatmeal 800g' , 'These instant oats are a rich source of fiber and energy that can be prepared in minutes. They provide a heart healthy breakfast option that can be customized with various toppings.', 10.50,100,'Quaker_Instant_Oatmeal_800g.webp', 1),
+(7, 'Nestle Koko Krunch Cereal 450g' , 'Nestle Koko Krunch Cereal 450g', 17.50 , 100 , 'Nestle_Koko_Krunch_Cereal_450g.webp' , 1),
+(4, 'Sunwhite Beras Wangi 5kg','A high quality fragrant rice known for its soft texture and pleasant aroma after cooking. It is ideal for daily meals and pairs perfectly with a wide variety of Asian cuisines.', 36.90, 100 , 'SunwhiteBerasWangi5kg',1),
+(1, 'Lushious Tomato Value Pack (Malaysia) 600g', 'Lushious Tomato Value Pack (Malaysia) 600g', 7.50, 100, 'LushiousTomatoValuePack600g.webp',1),
+(2, 'Red Seedless Watermelon 4.5kg' , 'Red Seedless Watermelon 4.5kg',28.00,100,'RedSeedlessWatermelon4.5kg',1),
+(5, 'F&N Ice Mountain Mineral Water 1.5L', '', 1.5,100,'F&NIceMountainMineralWater1.5L.webp',1);
+(2, 'Red Seedless Watermelon 4.5kg', 'Red Seedless Watermelon 4.5kg', 28.00, 100, 'RedSeedlessWatermelon4.5kg.webp', 1),
+(5, 'F&N Ice Mountain Mineral Water 1.5L', '', 1.50, 100, 'F&NIceMountainMineralWater1.5L.webp', 1);
 
 CREATE TABLE IF NOT EXISTS customers (
     customer_id INT PRIMARY KEY AUTO_INCREMENT,
