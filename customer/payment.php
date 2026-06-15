@@ -142,8 +142,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return false;
         }
 
+        const now = new Date();
+        const currentMonth = now.getMonth()+1; 
+        const currentYear = parseInt(now.getFullYear().toString().slice(-2)); // Get last two digits of year
+
         if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryDate)) {
             alert('Please enter a valid expiry date in MM/YY format.');
+            e.preventDefault();
+            return false;
+        }
+
+        // Extract parts
+        const parts = expiryDate.split('/');
+        const expMonth = parseInt(parts[0]);
+        const expYear = parseInt(parts[1]);
+
+        // compare years
+        if (expYear < currentYear) {
+            alert('Card has expired.');
+            e.preventDefault();
+            return false;
+        }
+
+        // If it's the current year, check if the month has already passed
+        if (expYear === currentYear && expMonth < currentMonth) {
+            alert('Card has expired.');
             e.preventDefault();
             return false;
         }
