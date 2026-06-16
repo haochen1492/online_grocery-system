@@ -26,6 +26,9 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $user_data = $stmt->get_result()->fetch_assoc();
 
+// Determine current view tab
+$current_view = isset($_GET['view']) ? $_GET['view'] : 'menu';
+
 // 1. HANDLE PROFILE INFORMATION UPDATE WITH EMAIL VERIFICATION
 if (isset($_POST['update_profile'])) {
     $name = $_POST['name'];
@@ -82,7 +85,6 @@ if (isset($_POST['update_profile'])) {
                     $otp_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
 
                     // Save or Update OTP along with the customer_id so verify_otp.php knows who requested it
-                    // Ensure your register_verify table can track this, or pass it via the email identity structure.
                     $otp_stmt = $conn->prepare("INSERT INTO register_verify (email, otp_code) VALUES (?, ?) ON DUPLICATE KEY UPDATE otp_code = ?, created_at = CURRENT_TIMESTAMP");
                     $otp_stmt->bind_param("sss", $new_email, $otp_code, $otp_code);
                     $otp_stmt->execute();
@@ -270,6 +272,26 @@ $states = [
         .valid { color: green; }
         .action-buttons { display: flex; gap: 10px; align-items: center; }
         .edit-input { margin-bottom: 5px; width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Menu Choices Styling */
+        .profile-menu-list { list-style: none; padding: 0; margin: 20px 0; }
+        .profile-menu-item { margin-bottom: 15px; }
+        .profile-menu-link { 
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 25px; background: #fff; border: 1px solid #e3e6e4;
+            border-radius: 8px; text-decoration: none; color: #333; font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease;
+        }
+        .profile-menu-link:hover { 
+            background: #fdfdfd; border-color: #329b18; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.06); transform: translateY(-1px);
+        }
+        .profile-menu-link .icon-text { display: flex; align-items: center; gap: 12px; }
+        .profile-menu-link .material-icons { color: #329b18; }
+        .profile-menu-link.logout-link .material-icons, .profile-menu-link.logout-link { color: #d9534f; }
+        .profile-menu-link.logout-link:hover { border-color: #d9534f; }
+        .back-btn { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; color: #666; margin-bottom: 20px; font-weight: 500; }
+        .back-btn:hover { color: #329b18; }
     </style>
 </head>
 <body>
@@ -277,12 +299,51 @@ $states = [
 <?php include 'includes/header.php'; ?>
 
 <div class="container">
+    
+    <!-- Render Back Link if we are inside a sub-page view -->
+    <?php if ($current_view !== 'menu'): ?>
+        <a href="profile.php" class="back-btn"><span class="material-icons">arrow_back</span> Back to Options</a>
+    <?php endif; ?>
+
     <h2>User Profile</h2>
 
     <?php if ($message): ?>
         <div class="alert <?php echo $message_type; ?>"><?php echo $message; ?></div>
     <?php endif; ?>
 
+    <!-- CHOICE SCREEN MENU VIEW -->
+    <?php if ($current_view === 'menu'): ?>
+        <p>Welcome, <strong><?php echo htmlspecialchars($user_data['customer_name']); ?></strong>. Please select an option below:</p>
+        <ul class="profile-menu-list">
+            <li class="profile-menu-item">
+                <a href="profile.php?view=personal" class="profile-menu-link">
+                    <div class="icon-text"><span class="material-icons">person</span> Edit Personal Information</div>
+                    <span class="material-icons">chevron_right</span>
+                </a>
+            </li>
+            <li class="profile-menu-item">
+                <a href="profile.php?view=address" class="profile-menu-link">
+                    <div class="icon-text"><span class="material-icons">local_shipping</span> Edit Delivery Address</div>
+                    <span class="material-icons">chevron_right</span>
+                </a>
+            </li>
+            <li class="profile-menu-item">
+                <a href="profile.php?view=password" class="profile-menu-link">
+                    <div class="icon-text"><span class="material-icons">lock</span> Password Reset</div>
+                    <span class="material-icons">chevron_right</span>
+                </a>
+            </li>
+            <li class="profile-menu-item">
+                <a href="logout.php" class="profile-menu-link logout-link" onclick="return confirm('Are you sure you want to log out?');">
+                    <div class="icon-text"><span class="material-icons">logout</span> Log Out</div>
+                    <span class="material-icons">chevron_right</span>
+                </a>
+            </li>
+        </ul>
+    <?php endif; ?>
+
+    <!-- VIEW 1: PERSONAL INFORMATION -->
+    <?php if ($current_view === 'personal'): ?>
     <div class="form-section">
         <h3>Personal Information</h3>
         <form method="POST">
@@ -298,8 +359,11 @@ $states = [
             <button type="submit" name="update_profile" class="btn-save" style="background-color: #329b18;">Update Info</button>
         </form>
     </div>
+    <?php endif; ?>
     
-<div class="form-section">
+    <!-- VIEW 2: DELIVERY ADDRESSES -->
+    <?php if ($current_view === 'address'): ?>
+    <div class="form-section">
         <h3>Delivery Addresses</h3>
         <?php
         $addr_query = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ? AND active = 1");
@@ -312,7 +376,7 @@ $states = [
         ?>
             <div class="address-card" style="display: flex; flex-direction: column; align-items: stretch; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 6px; margin-bottom: 10px; border-left: 5px solid #329b18;">
                 <?php if ($is_edit_mode): ?>
-                    <form method="POST" action="profile.php" style="width: 100%; margin: 0;">
+                    <form method="POST" action="profile.php?view=address" style="width: 100%; margin: 0;">
                         <input type="hidden" name="address_id" value="<?php echo $addr['address_id']; ?>">
                         
                         <label style="font-size: 0.85em; color: #555; margin-top: 5px;">House / Unit / Block No.</label>
@@ -342,7 +406,7 @@ $states = [
                         
                         <div style="display: flex; gap: 10px; margin-top: 5px;">
                             <button type="submit" name="update_address" class="btn-save" style="background:#28a745; margin: 0; width: auto; padding: 8px 15px; font-size: 0.9em;">Save Changes</button>
-                            <a href="profile.php" class="btn-save" style="background:#6c757d; margin: 0; width: auto; padding: 8px 15px; text-decoration: none; text-align: center; color: white; display: inline-block; line-height: 1.5; font-size: 0.9em;">Cancel</a>
+                            <a href="profile.php?view=address" class="btn-save" style="background:#6c757d; margin: 0; width: auto; padding: 8px 15px; text-decoration: none; text-align: center; color: white; display: inline-block; line-height: 1.5; font-size: 0.9em;">Cancel</a>
                         </div>
                     </form>
                 <?php else: ?>
@@ -354,7 +418,7 @@ $states = [
                     <div class="action-buttons-row" style="display: grid; grid-template-columns: auto 1fr auto; align-items: center; border-top: 1px solid #eaeaea; padding-top: 12px; margin-top: 8px; width: 100%;">
                         
                         <div style="display: flex; justify-content: flex-start;">
-                            <a href="profile.php?edit_address_id=<?php echo $addr['address_id']; ?>" style="color: #007bff; text-decoration: none; display: inline-flex; align-items: center; font-size: 0.9em; gap: 6px; font-weight: 500; transition: opacity 0.2s;">
+                            <a href="profile.php?view=address&edit_address_id=<?php echo $addr['address_id']; ?>" style="color: #007bff; text-decoration: none; display: inline-flex; align-items: center; font-size: 0.9em; gap: 6px; font-weight: 500; transition: opacity 0.2s;">
                                 <span class="material-icons" style="font-size: 18px;">edit</span> Edit
                             </a>
                         </div>
@@ -394,10 +458,13 @@ $states = [
             <button type="submit" name="add_address" class="btn-save" style="background:#007bff;">Save Address</button>
         </form>
     </div>
+    <?php endif; ?>
 
+    <!-- VIEW 3: SECURITY SETTINGS / PASSWORD -->
+    <?php if ($current_view === 'password'): ?>
     <div class="form-section">
         <h3>Security Settings</h3>
-        <form method="POST">>
+        <form method="POST">
             <label>Current Password</label>
             <div class="password-wrapper">
                 <input type="password" name="old_password" id="old_pass" required>
@@ -426,8 +493,9 @@ $states = [
             <button type="submit" name="change_password" class="btn-save" style="background-color: #48327a;">Update Password</button>
         </form>
     </div>
+    <?php endif; ?>
 
-    <div style="text-align: center;">
+    <div style="text-align: center; margin-top: 20px;">
         <a href="index.php">Back to Home</a>
     </div>
 </div>
@@ -477,9 +545,7 @@ function validateFormOnSubmit(event) {
     }
 }
 
-
 function checkRequirements() {
-    // Note: corrected from "regPassword" to "new_pass" to match HTML structure
     var val = document.getElementById("new_pass").value; 
     
     document.getElementById("len").className = val.length >= 15 ? "requirement valid" : "requirement";
