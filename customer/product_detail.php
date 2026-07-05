@@ -48,9 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 
         if ($check_result->num_rows > 0) {
             $cart_item = $check_result->fetch_assoc();
+
+            $stmt_fresh = $conn->prepare("SELECT stock_quantity FROM products WHERE product_id = ?");
+            $stmt_fresh->bind_param("i", $product_id);
+            $stmt_fresh->execute();
+            $current_stock = $stmt_fresh->get_result()->fetch_assoc()['stock_quantity'];
+
             $new_qty = $cart_item['quantity'] + $quantity;
 
-            if ($new_qty <= $product['stock_quantity']) {
+            if ($new_qty <= $current_stock) {
                 // Update quantity and force select status back to 1
                 $update_stmt = $conn->prepare("UPDATE cart SET quantity = ?, selected = 1 WHERE customer_id = ? AND product_id = ? AND active = 1");
                 $update_stmt->bind_param("iii", $new_qty, $customer_id, $product_id);
