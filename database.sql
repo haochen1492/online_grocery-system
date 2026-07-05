@@ -59,6 +59,15 @@ INSERT INTO `products` (`category_id`, `name`, `description`, `price`, `stock_qu
 (5, 'F&N Ice Mountain Mineral Water 1.5L', '', 1.50, 97, '2026-06-15 07:38:27', 'F&NIceMountainMineralWater1.5L.webp', 1),
 (9, 'NutriPlus Omega-3 Chicken Eggs 15pcs/pack', 'NutriPlus Omega-3 Chicken Eggs 15pcs/pack', 11.50, 100, '2026-06-15 07:45:26', 'NutriPlusOmega-3ChickenEggs15pcsperpack.jpg', 1),
 (9, 'Nutriplus Kampung Eggs with Omega-3 10pcs/pack', 'Nutriplus Kampung Eggs with Omega-3 10pcs/pack', 8.60, 100, '2026-06-15 07:46:45', 'NutriplusKampungEggswithOmega-3_10pcsperpack.jpg', 1);
+(4, 'Adabi Chicken Curry Powder 250g', 'Adabi Chicken and Meat Curry Powder 250g', 6.90, 50, 'adabi_chicken_curry_250g.jpg', 1),
+(4, 'Maggi Ikan Bilis Stock Cubes 60g', 'Maggi Ikan Bilis Stock Cubes 60g', 3.40, 50, 'maggi_ikan_bilis_stock.jpg', 1),
+(4, 'Ferrero Nutella Hazelnut Spread 350g', 'Ferrero Nutella Hazelnut Spread with Cocoa 350g', 23.90, 30, 'nutella_350g.jpg', 1),
+(1, 'Cameron Garden French Bean 250g', 'Cameron Garden French Bean (Kacang Buncis) 250g', 4.00, 40, 'french_bean_250g.jpg', 1),
+(1, 'Paprika Farm Japanese Cucumber 330g', 'Paprika Farm Japanese Cucumber (Kyuri) 330g', 3.90, 40, 'japanese_cucumber.jpg', 1),
+(5, 'Farm Fresh Pure Fresh Milk 2L', 'Farm Fresh Pure Fresh Milk 2L', 16.70, 20, 'farm_fresh_milk_2L.jpg', 1),
+(5, 'Tropicana Twister Apple 1.5L', 'Tropicana Twister Apple 1.5L', 6.45, 50, 'tropicana_apple_1.5L.jpg', 1),
+(3, 'Hup Seng Ping Pong Cream Cracker 428g', 'Hup Seng Ping Pong Cream Cracker 428g', 4.90, 60, 'hup_seng_crackers.jpg', 1),
+(3, 'Bin Bin Rice Crackers 150g', 'Bin Bin Rice Crackers 150g', 9.00, 40, 'bin_bin_rice_crackers.jpg', 1);
 
 CREATE TABLE IF NOT EXISTS customers (
     customer_id INT PRIMARY KEY AUTO_INCREMENT,

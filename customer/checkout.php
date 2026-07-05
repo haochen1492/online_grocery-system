@@ -125,72 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             $_SESSION['temp_total'] = $grandTotal;
             header('Location: tng_payment.php');
             exit;
-            
-        // commenting out COB option due to if customer select COD but not at home, it will cause problem for delivery and customer service
-        /*} elseif ($payment_method === 'Cash On Delivery') {
-                
-                // stock validation
-                foreach ($cart_items as $item) {
-                    $requested_qty = $_SESSION['cart'][$item['product_id']];
-                    if ($item['stock_quantity'] < $requested_qty) {
-                        $error = "Insufficient stock for " . htmlspecialchars($item['name']) . ". Only " . $item['stock_quantity'] . " left.";
-                        break; 
-                    }
-                }
+        } else {
+            $error = "Invalid payment method selected.";
+        }
 
-                if (empty($error)) {
-                    try {
-                        // create order
-                        $stmt = $conn->prepare("INSERT INTO orders (customer_id, address_id, total_price, delivery_status, payment_method) VALUES (?, ?, ?, ?, ?)");
-                        $stmt->bind_param("iidss", $customer_id, $address_id, $grandTotal, $status, $payment_method);
-                        $stmt->execute();
-                        $order_id = $conn->insert_id;
-
-                        // insert payment record 
-                        $stmt_pay = $conn->prepare("INSERT INTO payments (order_id, price, payment_status) VALUES (?, ?, 'pending')");
-                        $stmt_pay->bind_param("id", $order_id, $grandTotal);
-                        $stmt_pay->execute();
-
-                        // insert order items and update stock
-                        $stmt_items = $conn->prepare("INSERT INTO order_details (order_id, product_id, quantity, product_price) VALUES (?, ?, ?, ?)");
-                        $stmt_stock = $conn->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?");
-
-                        foreach ($cart_items as $item) {
-                            $p_id = $item['product_id'];
-                            $qty = $_SESSION['cart'][$p_id];
-                            $price = $item['price'];
-
-                            $stmt_items->bind_param("iiid", $order_id, $p_id, $qty, $price);
-                            $stmt_items->execute();
-
-                            $stmt_stock->bind_param("ii", $qty, $p_id);
-                            $stmt_stock->execute();
-                        }
-
-                        // deactivated cart items
-                        if (!empty($selected_ids)) {
-                            $placeholders = implode(',', array_fill(0, count($selected_ids), '?'));
-                            $stmt_deact = $conn->prepare("UPDATE cart SET active = 0 WHERE customer_id = ? AND product_id IN ($placeholders)");
-                            $types = "i" . str_repeat('i', count($selected_ids));
-                            $stmt_deact->bind_param($types, $customer_id, ...$selected_ids);
-                            $stmt_deact->execute();
-                        }
-
-                        // clear session cart and redirect
-                        unset($_SESSION['cart']);
-                        unset($_SESSION['checkout_final_items']);
-                        header('Location: order_confirmation.php');
-                        exit;
-
-                    } catch (Exception $e) {
-                        $error = "System Error: " . $e->getMessage();
-                    }
-                }*/
-            } else {
-                $error = "Invalid payment method selected.";
-            }
-
-       }
+    }
 }
 
 $stmt_addr = $conn->prepare("SELECT * FROM addresses WHERE customer_id = ? AND active = 1");
