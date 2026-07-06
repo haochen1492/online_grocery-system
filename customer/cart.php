@@ -23,6 +23,9 @@ $stmt->bind_param("i", $customer_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
+//clear cart session at the start of the page load for current user
+$_SESSION['cart']=[];
+
 while ($row = $result->fetch_assoc()) {
     $products[$row['product_id']] = $row;
     $_SESSION['cart'][$row['product_id']] = $row['quantity'];
