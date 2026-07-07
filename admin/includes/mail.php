@@ -6,9 +6,9 @@ define('MAIL_USERNAME',   'infinitygrocer7@gmail.com');
 define('MAIL_PASSWORD',   'ypgb sney hmqe hpmg');    
 define('MAIL_FROM_EMAIL', 'infinitygrocer7@gmail.com');   
 define('MAIL_FROM_NAME',  'Infinity Grocer Admin');        
-define('MAIL_ENCRYPTION', 'tls');             // 
+define('MAIL_ENCRYPTION', 'tls');     //
 
-/
+/**
  * Send an email using PHPMailer via SMTP
  *
  * @param string $to_email   recipient email address
@@ -75,7 +75,7 @@ function sendMailFallback($to_email, $to_name, $subject, $body_html) {
     ];
 }
 
-/
+/*
  * Build the HTML email template for password reset
  *
  * @param string $username   admin username
